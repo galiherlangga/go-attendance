@@ -1,0 +1,113 @@
+package handlers
+
+import (
+	"math"
+	"net/http"
+	"strconv"
+
+	"github.com/galiherlangga/go-attendance/app/models"
+	"github.com/galiherlangga/go-attendance/app/services"
+	"github.com/galiherlangga/go-attendance/pkg/utils"
+	"github.com/gin-gonic/gin"
+)
+
+type PayrollPeriodHandler struct {
+	service services.PayrollPeriodService
+}
+
+func NewPayrollPeriodHandler(service services.PayrollPeriodService) *PayrollPeriodHandler {
+	return &PayrollPeriodHandler{
+		service: service,
+	}
+}
+
+func (h *PayrollPeriodHandler) GetPayrollPeriodList(ctx *gin.Context) {
+	page, _ := strconv.Atoi(ctx.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(ctx.DefaultQuery("limit", "10"))
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 10
+	}
+	pagination := utils.Pagination{
+		Page:  page,
+		Limit: limit,
+	}
+
+	payrollPeriods, total, err := h.service.GetPayrollPeriodList(pagination)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve payroll periods"})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{
+		"data":      payrollPeriods,
+		"total":     total,
+		"page":      page,
+		"limit":     limit,
+		"totalPage": int(math.Ceil(float64(total) / float64(limit))),
+	})
+}
+
+func (h *PayrollPeriodHandler) GetPayrollPeriodByID(ctx *gin.Context) {
+	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+
+	payrollPeriod, err := h.service.GetPayrollPeriodByID(uint(id))
+	if err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "Payroll period not found"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"data": payrollPeriod})
+}
+
+func (h *PayrollPeriodHandler) CreatePayrollPeriod(ctx *gin.Context) {
+	var period models.PayrollPeriod
+	if err := ctx.ShouldBindJSON(&period); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+
+	createdPeriod, err := h.service.CreatePayrollPeriod(&period)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create payroll period"})
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, gin.H{"data": createdPeriod})
+}
+
+func (h *PayrollPeriodHandler) UpdatePayrollPeriod(ctx *gin.Context) {
+	var period models.PayrollPeriod
+	if err := ctx.ShouldBindJSON(&period); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+
+	updatedPeriod, err := h.service.UpdatePayrollPeriod(&period)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update payroll period"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"data": updatedPeriod})
+}
+
+func (h *PayrollPeriodHandler) DeletePayrollPeriod(ctx *gin.Context) {
+	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+
+	if err := h.service.DeletePayrollPeriod(uint(id)); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete payroll period"})
+		return
+	}
+
+	ctx.JSON(http.StatusNoContent, nil)
+}

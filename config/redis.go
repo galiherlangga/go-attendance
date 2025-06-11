@@ -26,3 +26,7 @@ func InitRedis() {
 		log.Println("Redis connected")
 	}
 }
+
+func SetRedisClient(client *redis.Client) {
+	RedisClient = client
+}

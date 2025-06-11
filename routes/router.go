@@ -39,10 +39,25 @@ func SetupRouter(db *gorm.DB, cache *redis.Client) *gin.Engine {
 		ctx.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 	
+	// Payroll period modules
+	payrollPeriodRepo := repositories.NewPayrollPeriodRepository(db)
+	payrollPeriodService := services.NewPayrollPeriodService(payrollPeriodRepo, cache)
+	payrollPeriodHandler := handlers.NewPayrollPeriodHandler(payrollPeriodService)
+	
 	// Auth routes
 	authGroup := router.Group("/auth")
 	{
 		authGroup.POST("login", userHandler.Login)
+	}
+	
+	// Payroll period routes
+	payrollPeriodGroup := router.Group("/payroll-periods")
+	{
+		payrollPeriodGroup.GET("", payrollPeriodHandler.GetPayrollPeriodList)
+		payrollPeriodGroup.GET("/:id", payrollPeriodHandler.GetPayrollPeriodByID)
+		payrollPeriodGroup.POST("", payrollPeriodHandler.CreatePayrollPeriod)
+		payrollPeriodGroup.PUT("/:id", payrollPeriodHandler.UpdatePayrollPeriod)
+		payrollPeriodGroup.DELETE("/:id", payrollPeriodHandler.DeletePayrollPeriod)
 	}
 
 	return router
