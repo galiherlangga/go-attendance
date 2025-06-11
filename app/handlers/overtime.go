@@ -26,7 +26,7 @@ func NewOvertimeHandler(service services.OvertimeService, userService services.U
 func (h *OvertimeHandler) GetOvertimeList(ctx *gin.Context) {
 	currentUserID, exists := ctx.Get("user_id")
 	if !exists {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "user_id not found in middleware"})
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized user access"})
 		return
 	}
 	currentUserIDUint, ok := currentUserID.(uint)
@@ -50,9 +50,9 @@ func (h *OvertimeHandler) GetOvertimeList(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid user_id"})
 		return
 	}
-	// Check if the current user is not an admin and is trying to access another user's attendance
+	// Check if the current user is not an admin and is trying to access another user's overtime
 	if !isAdmin && uint(userID) != currentUserIDUint {
-		ctx.JSON(http.StatusForbidden, gin.H{"error": "you are not allowed to access this user's attendance"})
+		ctx.JSON(http.StatusForbidden, gin.H{"error": "you are not allowed to access this user's overtime"})
 		return
 	}
 

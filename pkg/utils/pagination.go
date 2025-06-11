@@ -25,3 +25,4 @@ func GetPagination(ctx *gin.Context) Pagination {
 		Limit: limit,
 	}
 }
+

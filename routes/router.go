@@ -55,6 +55,11 @@ func SetupRouter(db *gorm.DB, cache *redis.Client) *gin.Engine {
 	overtimeService := services.NewOvertimeService(overtimeRepo, cache)
 	overtimeHandler := handlers.NewOvertimeHandler(overtimeService, userService)
 	
+	// Reimbursement modules
+	reimbursementRepo := repositories.NewReimbursementRepository(db)
+	reimbursementService := services.NewReimbursementService(reimbursementRepo, payrollPeriodRepo, cache)
+	reimbursementHandler := handlers.NewReimbursementHandler(reimbursementService, userService)
+	
 	// Auth routes
 	authGroup := router.Group("/auth")
 	{
@@ -91,6 +96,17 @@ func SetupRouter(db *gorm.DB, cache *redis.Client) *gin.Engine {
 		overtimeGroup.POST("", overtimeHandler.CreateOvertime)
 		overtimeGroup.PUT("/:id", overtimeHandler.UpdateOvertime)
 		overtimeGroup.DELETE("/:id", overtimeHandler.DeleteOvertime)
+	}
+	
+	// Reimbursement routes
+	reimbursementGroup := router.Group("/reimbursements")
+	reimbursementGroup.Use(middleware.JWTAuthMiddleware())
+	{
+		reimbursementGroup.GET("", reimbursementHandler.GetReimbursementList)
+		reimbursementGroup.GET("/:id", reimbursementHandler.GetReimbursementByID)
+		reimbursementGroup.POST("", reimbursementHandler.CreateReimbursement)
+		reimbursementGroup.PUT("/:id", reimbursementHandler.UpdateReimbursement)
+		reimbursementGroup.DELETE("/:id", reimbursementHandler.DeleteReimbursement)
 	}
 
 	return router

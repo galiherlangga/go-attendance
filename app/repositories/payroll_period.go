@@ -9,6 +9,7 @@ import (
 type PayrollPeriodRepository interface {
 	FindAll(pagination utils.Pagination) ([]*models.PayrollPeriod, int64, error)
 	FindByID(id uint) (*models.PayrollPeriod, error)
+	IsDateLocked(date string) (bool, error)
 	Create(period *models.PayrollPeriod) (*models.PayrollPeriod, error)
 	Update(period *models.PayrollPeriod) (*models.PayrollPeriod, error)
 	Delete(id uint) error
@@ -71,4 +72,14 @@ func (r *payrollPeriodRepository) Delete(id uint) error {
 		return err // Other error
 	}
 	return nil
+}
+
+func (r *payrollPeriodRepository) IsDateLocked(date string) (bool, error) {
+	var count int64
+	if err := r.db.Model(&models.PayrollPeriod{}).
+		Where("start_date <= ? AND end_date >= ? AND is_processed = true", date, date).
+		Count(&count).Error; err != nil {
+		return false, err // Other error
+	}
+	return count > 0, nil
 }
