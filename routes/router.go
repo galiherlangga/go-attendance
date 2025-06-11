@@ -45,6 +45,11 @@ func SetupRouter(db *gorm.DB, cache *redis.Client) *gin.Engine {
 	payrollPeriodService := services.NewPayrollPeriodService(payrollPeriodRepo, cache)
 	payrollPeriodHandler := handlers.NewPayrollPeriodHandler(payrollPeriodService)
 	
+	// Attendance modules
+	attendanceRepo := repositories.NewAttendanceRepository(db)
+	attendanceService := services.NewAttendanceService(attendanceRepo)
+	attendanceHandler := handlers.NewAttendanceHandler(attendanceService, userService)
+	
 	// Auth routes
 	authGroup := router.Group("/auth")
 	{
@@ -64,6 +69,16 @@ func SetupRouter(db *gorm.DB, cache *redis.Client) *gin.Engine {
 		adminPayrollPeriodGroup.POST("", payrollPeriodHandler.CreatePayrollPeriod)
 		adminPayrollPeriodGroup.PUT("/:id", payrollPeriodHandler.UpdatePayrollPeriod)
 		adminPayrollPeriodGroup.DELETE("/:id", payrollPeriodHandler.DeletePayrollPeriod)
+	}
+	
+	// Attendance routes
+	attendanceGroup := router.Group("/attendances")
+	attendanceGroup.Use(middleware.JWTAuthMiddleware())
+	{
+		attendanceGroup.POST("/check-in", attendanceHandler.CheckIn)
+		attendanceGroup.POST("/check-out", attendanceHandler.CheckOut)
+		attendanceGroup.GET("", attendanceHandler.GetAttendanceList)
+		attendanceGroup.GET("/:id", attendanceHandler.RetrieveAttendance)
 	}
 
 	return router

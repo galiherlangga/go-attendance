@@ -1,0 +1,71 @@
+package repositories
+
+import (
+	"github.com/galiherlangga/go-attendance/app/models"
+	"gorm.io/gorm"
+)
+
+type AttendanceRepository interface {
+	GetAttendanceList(userID uint, startDate, endDate string) ([]*models.Attendance, error)
+	GetAttendanceByID(id uint) (*models.Attendance, error)
+	GetAttendanceByUserAndDate(userID uint, date string) (*models.Attendance, error)
+	CreateAttendance(attendance *models.Attendance) (*models.Attendance, error)
+	UpdateAttendance(attendance *models.Attendance) (*models.Attendance, error)
+	DeleteAttendance(id uint) error
+}
+
+type attendanceRepository struct {
+	db *gorm.DB
+}
+
+func NewAttendanceRepository(db *gorm.DB) AttendanceRepository {
+	return &attendanceRepository{
+		db: db,
+	}
+}
+
+func (r *attendanceRepository) GetAttendanceList(userID uint, startDate, endDate string) ([]*models.Attendance, error) {
+	var attendances []*models.Attendance
+	query := r.db.Where("user_id = ? AND date BETWEEN ? AND ?", userID, startDate, endDate)
+	if err := query.Find(&attendances).Error; err != nil {
+		return nil, err
+	}
+	return attendances, nil
+}
+
+func (r *attendanceRepository) GetAttendanceByID(id uint) (*models.Attendance, error) {
+	var attendance models.Attendance
+	if err := r.db.First(&attendance, id).Error; err != nil {
+		return nil, err
+	}
+	return &attendance, nil
+}
+
+func (r *attendanceRepository) GetAttendanceByUserAndDate(userID uint, date string) (*models.Attendance, error) {
+	var attendance models.Attendance
+	if err := r.db.Where("user_id = ? AND date = ?", userID, date).First(&attendance).Error; err != nil {
+		return nil, err
+	}
+	return &attendance, nil
+}
+
+func (r *attendanceRepository) CreateAttendance(attendance *models.Attendance) (*models.Attendance, error) {
+	if err := r.db.Create(attendance).Error; err != nil {
+		return nil, err
+	}
+	return attendance, nil
+}
+
+func (r *attendanceRepository) UpdateAttendance(attendance *models.Attendance) (*models.Attendance, error) {
+	if err := r.db.Save(attendance).Error; err != nil {
+		return nil, err
+	}
+	return attendance, nil
+}
+
+func (r *attendanceRepository) DeleteAttendance(id uint) error {
+	if err := r.db.Delete(&models.Attendance{}, id).Error; err != nil {
+		return err
+	}
+	return nil
+}

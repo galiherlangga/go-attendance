@@ -9,6 +9,7 @@ import (
 
 type UserService interface {
 	LoginUser(input *models.LoginRequest) (string, string, error)
+	IsAdmin(userID uint) (bool, error)
 }
 
 type userService struct {
@@ -42,4 +43,12 @@ func (s *userService) LoginUser(input *models.LoginRequest) (string, string, err
 		return "", "", err // Error generating refresh token
 	}
 	return accessToken, refreshToken, nil
+}
+
+func (s *userService) IsAdmin(userID uint) (bool, error) {
+	user, err := s.userRepo.FindByID(userID)
+	if err != nil {
+		return false, err // User not found or other error
+	}
+	return user.Role.Name == "admin", nil
 }

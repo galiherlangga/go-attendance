@@ -12,6 +12,7 @@ func AutoMigrate(db *gorm.DB) {
 		&models.Role{},
 		&models.User{},
 		&models.PayrollPeriod{},
+		&models.Attendance{},
 	)
 	if err != nil {
 		log.Fatalf("Failed to run migrations: %v", err)
