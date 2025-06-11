@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"os"
 	"time"
 
@@ -15,6 +16,22 @@ func GenerateAccessToken(userID uint) (string, error) {
 
 func GenerateRefreshToken(userID uint) (string, error) {
 	return generateJWT(userID, 24*time.Hour)
+}
+
+func ParseJWT(tokenStr string) (uint, error) {
+	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+		return jwtSecret, nil
+	})
+	if err != nil || !token.Valid {
+		return 0, fmt.Errorf("invalid token")
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		if userID, ok := claims["user_id"].(float64); ok {
+			return uint(userID), nil
+		}
+	}
+	return 0, fmt.Errorf("user_id not found in token claims")
 }
 
 func generateJWT(userID uint, duration time.Duration) (string, error) {

@@ -7,6 +7,7 @@ import (
 	"github.com/galiherlangga/go-attendance/app/handlers"
 	"github.com/galiherlangga/go-attendance/app/repositories"
 	"github.com/galiherlangga/go-attendance/app/services"
+	middleware "github.com/galiherlangga/go-attendance/pkg/middlewares"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
@@ -52,12 +53,17 @@ func SetupRouter(db *gorm.DB, cache *redis.Client) *gin.Engine {
 	
 	// Payroll period routes
 	payrollPeriodGroup := router.Group("/payroll-periods")
+	payrollPeriodGroup.Use(middleware.JWTAuthMiddleware())
 	{
 		payrollPeriodGroup.GET("", payrollPeriodHandler.GetPayrollPeriodList)
 		payrollPeriodGroup.GET("/:id", payrollPeriodHandler.GetPayrollPeriodByID)
-		payrollPeriodGroup.POST("", payrollPeriodHandler.CreatePayrollPeriod)
-		payrollPeriodGroup.PUT("/:id", payrollPeriodHandler.UpdatePayrollPeriod)
-		payrollPeriodGroup.DELETE("/:id", payrollPeriodHandler.DeletePayrollPeriod)
+	}
+	adminPayrollPeriodGroup := payrollPeriodGroup.Group("")
+	adminPayrollPeriodGroup.Use(middleware.IsAdminMiddleware(userRepo))
+	{
+		adminPayrollPeriodGroup.POST("", payrollPeriodHandler.CreatePayrollPeriod)
+		adminPayrollPeriodGroup.PUT("/:id", payrollPeriodHandler.UpdatePayrollPeriod)
+		adminPayrollPeriodGroup.DELETE("/:id", payrollPeriodHandler.DeletePayrollPeriod)
 	}
 
 	return router
