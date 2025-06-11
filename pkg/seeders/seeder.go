@@ -11,4 +11,6 @@ type Database interface {
 func Seed(db *gorm.DB) {
 	SeedRoles(db)
 	SeedUsers(db)
+	SeedAttendances(db)
+	SeedOvertime(db)
 }

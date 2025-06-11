@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"math"
 	"time"
 
 	"github.com/galiherlangga/go-attendance/app/models"
@@ -58,8 +59,11 @@ func (s *payslipService) GeneratePayslip(userID uint, periodID uint, monthlySala
 	reimbursements, _ := s.reimbursementRepo.SumReimbursement(userID, start, end)
 	
 	dailySalary := monthlySalary / float64(workdays)
+	dailySalary = math.Round(dailySalary * 100) / 100
 	overtimePay := overtimeHours * (dailySalary / 8) * 2
+	overtimePay = math.Round(overtimePay * 100) / 100
 	total := float64(attended) * dailySalary + overtimePay + reimbursements
+	total = math.Round(total * 100) / 100
 	
 	now := time.Now()
 	payslip := &models.Payslip{
