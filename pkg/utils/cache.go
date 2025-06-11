@@ -68,3 +68,30 @@ func SetCache[T any](ctx context.Context, rdb *redis.Client, key string, value *
 		log.Println("⚠️ Redis Set error:", err)
 	}
 }
+
+func DeleteCache(ctx context.Context, rdb *redis.Client, key string) error {
+	if err := rdb.Del(ctx, key).Err(); err != nil {
+		log.Println("⚠️ Redis Delete error:", err)
+		return err
+	}
+	return nil
+}
+
+func DeleteCacheByPattern(ctx context.Context, rdb *redis.Client, pattern string) error {
+	keys, err := rdb.Keys(ctx, pattern).Result()
+	if err != nil {
+		log.Println("⚠️ Redis Keys error:", err)
+		return err
+	}
+
+	if len(keys) == 0 {
+		return nil // No keys to delete
+	}
+
+	if err := rdb.Del(ctx, keys...).Err(); err != nil {
+		log.Println("⚠️ Redis Del error:", err)
+		return err
+	}
+
+	return nil
+}

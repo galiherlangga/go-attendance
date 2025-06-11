@@ -22,18 +22,7 @@ func NewPayrollPeriodHandler(service services.PayrollPeriodService) *PayrollPeri
 }
 
 func (h *PayrollPeriodHandler) GetPayrollPeriodList(ctx *gin.Context) {
-	page, _ := strconv.Atoi(ctx.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(ctx.DefaultQuery("limit", "10"))
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 {
-		limit = 10
-	}
-	pagination := utils.Pagination{
-		Page:  page,
-		Limit: limit,
-	}
+	pagination := utils.GetPagination(ctx)
 
 	payrollPeriods, total, err := h.service.GetPayrollPeriodList(pagination)
 	if err != nil {
@@ -43,9 +32,9 @@ func (h *PayrollPeriodHandler) GetPayrollPeriodList(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"data":      payrollPeriods,
 		"total":     total,
-		"page":      page,
-		"limit":     limit,
-		"totalPage": int(math.Ceil(float64(total) / float64(limit))),
+		"page":      pagination.Page,
+		"limit":     pagination.Limit,
+		"totalPage": int(math.Ceil(float64(total) / float64(pagination.Limit))),
 	})
 }
 

@@ -74,8 +74,12 @@ func (s *attendanceService) CheckOut(userID uint) (*models.Attendance, error) {
 	if att.CheckIn == nil {
 		return nil, errors.New("check-in must be done before check-out")
 	}
+	
+	if att.CheckOut != nil {
+		return nil, errors.New("check-out already done for today")
+	}
 
 	now := time.Now()
-	att.CheckOut = now
+	att.CheckOut = &now
 	return s.repo.UpdateAttendance(att)
 }

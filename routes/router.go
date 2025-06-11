@@ -50,6 +50,11 @@ func SetupRouter(db *gorm.DB, cache *redis.Client) *gin.Engine {
 	attendanceService := services.NewAttendanceService(attendanceRepo)
 	attendanceHandler := handlers.NewAttendanceHandler(attendanceService, userService)
 	
+	// Overtime modules
+	overtimeRepo := repositories.NewOvertimeRepository(db)
+	overtimeService := services.NewOvertimeService(overtimeRepo, cache)
+	overtimeHandler := handlers.NewOvertimeHandler(overtimeService, userService)
+	
 	// Auth routes
 	authGroup := router.Group("/auth")
 	{
@@ -58,17 +63,13 @@ func SetupRouter(db *gorm.DB, cache *redis.Client) *gin.Engine {
 	
 	// Payroll period routes
 	payrollPeriodGroup := router.Group("/payroll-periods")
-	payrollPeriodGroup.Use(middleware.JWTAuthMiddleware())
+	payrollPeriodGroup.Use(middleware.IsAdminMiddleware(userRepo))
 	{
 		payrollPeriodGroup.GET("", payrollPeriodHandler.GetPayrollPeriodList)
 		payrollPeriodGroup.GET("/:id", payrollPeriodHandler.GetPayrollPeriodByID)
-	}
-	adminPayrollPeriodGroup := payrollPeriodGroup.Group("")
-	adminPayrollPeriodGroup.Use(middleware.IsAdminMiddleware(userRepo))
-	{
-		adminPayrollPeriodGroup.POST("", payrollPeriodHandler.CreatePayrollPeriod)
-		adminPayrollPeriodGroup.PUT("/:id", payrollPeriodHandler.UpdatePayrollPeriod)
-		adminPayrollPeriodGroup.DELETE("/:id", payrollPeriodHandler.DeletePayrollPeriod)
+		payrollPeriodGroup.POST("", payrollPeriodHandler.CreatePayrollPeriod)
+		payrollPeriodGroup.PUT("/:id", payrollPeriodHandler.UpdatePayrollPeriod)
+		payrollPeriodGroup.DELETE("/:id", payrollPeriodHandler.DeletePayrollPeriod)
 	}
 	
 	// Attendance routes
@@ -79,6 +80,17 @@ func SetupRouter(db *gorm.DB, cache *redis.Client) *gin.Engine {
 		attendanceGroup.POST("/check-out", attendanceHandler.CheckOut)
 		attendanceGroup.GET("", attendanceHandler.GetAttendanceList)
 		attendanceGroup.GET("/:id", attendanceHandler.RetrieveAttendance)
+	}
+	
+	// Overtime routes
+	overtimeGroup := router.Group("/overtimes")
+	overtimeGroup.Use(middleware.JWTAuthMiddleware())
+	{
+		overtimeGroup.GET("", overtimeHandler.GetOvertimeList)
+		overtimeGroup.GET("/:id", overtimeHandler.GetOvertimeByID)
+		overtimeGroup.POST("", overtimeHandler.CreateOvertime)
+		overtimeGroup.PUT("/:id", overtimeHandler.UpdateOvertime)
+		overtimeGroup.DELETE("/:id", overtimeHandler.DeleteOvertime)
 	}
 
 	return router
