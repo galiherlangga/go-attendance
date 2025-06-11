@@ -12,6 +12,7 @@ type AttendanceRepository interface {
 	CreateAttendance(attendance *models.Attendance) (*models.Attendance, error)
 	UpdateAttendance(attendance *models.Attendance) (*models.Attendance, error)
 	DeleteAttendance(id uint) error
+	CountWorkingDays(userID uint, startDate, endDate string) (int64, error)
 }
 
 type attendanceRepository struct {
@@ -68,4 +69,15 @@ func (r *attendanceRepository) DeleteAttendance(id uint) error {
 		return err
 	}
 	return nil
+}
+
+func (r *attendanceRepository) CountWorkingDays(userID uint, startDate, endDate string) (int64, error) {
+	var count int64
+	query := r.db.Model(&models.Attendance{}).
+		Where("user_id = ? AND date BETWEEN ? AND ?", userID, startDate, endDate).
+		Where("check_in IS NOT NULL AND check_out IS NOT NULL")
+	if err := query.Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
 }

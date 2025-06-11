@@ -15,6 +15,7 @@ type OvertimeRepository interface {
 	CreateOvertime(overtime *models.Overtime) (*models.Overtime, error)
 	UpdateOvertime(overtime *models.Overtime) (*models.Overtime, error)
 	DeleteOvertime(id uint) error
+	CountOvertimeHours(userID uint, startDate, endDate string) (float64, error)
 }
 
 type overtimeRepository struct {
@@ -86,4 +87,18 @@ func (r *overtimeRepository) DeleteOvertime(id uint) error {
 		return err
 	}
 	return nil
+}
+
+func (r *overtimeRepository) CountOvertimeHours(userID uint, startDate, endDate string) (float64, error) {
+	var totalHours float64
+
+	query := r.db.Model(&models.Overtime{}).
+		Select("SUM(hours)").
+		Where("user_id = ? AND date BETWEEN ? AND ?", userID, startDate, endDate)
+
+	if err := query.Scan(&totalHours).Error; err != nil {
+		return 0, err
+	}
+
+	return totalHours, nil
 }

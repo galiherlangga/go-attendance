@@ -91,7 +91,7 @@ func (h *ReimbursementHandler) GetReimbursementByID(ctx *gin.Context) {
 func (h *ReimbursementHandler) CreateReimbursement(ctx *gin.Context) {
 	var reimbursementReq models.ReimbursementRequest
 	if err := ctx.ShouldBindJSON(&reimbursementReq); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body", "details": err.Error()})
 		return
 	}
 

@@ -36,11 +36,13 @@ func SeedUsers(db Database) {
 
 	// Loop to create 100 users
 	for i := 1; i <= 100; i++ {
+		salary := float64(gofakeit.IntRange(10000, 100000))
 		user := models.User{
 			Name:     gofakeit.Name(),
 			Email:    gofakeit.Email(),
 			Password: string(password), // Use the same password for simplicity
 			RoleID:   2,                // Assuming role ID 2 is for regular users
+			MonthlySalary: &salary,
 		}
 		if err := db.Create(&user).Error; err != nil {
 			fmt.Printf("Error creating user %d: %v\n", i, err)

@@ -19,7 +19,7 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 		}
 
 		// Parse and validate the JWT token here
-		userId, err := utils.ParseJWT(cookie)
+		userID, err := utils.ParseJWT(cookie)
 		if err != nil {
 			fmt.Println(err.Error())
 			ctx.JSON(401, gin.H{"error": "Unauthorized"})
@@ -28,24 +28,26 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 		}
 
 		// Store user ID in context for later use
-		ctx.Set("user_id", userId)
+		ctx.Set("user_id", userID)
 		ctx.Next()
 	}
 }
 
 func IsAdminMiddleware(userRepo repositories.UserRepository) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		// Get user ID from context
-		userIDInterface, exists := ctx.Get("user_id")
-		if !exists {
+		cookie, err := ctx.Cookie("access_token")
+		if err != nil {
+			fmt.Println(err.Error())
 			ctx.JSON(401, gin.H{"error": "Unauthorized"})
 			ctx.Abort()
 			return
 		}
 
-		userID, ok := userIDInterface.(uint) // or int, depending on your model
-		if !ok {
-			ctx.JSON(500, gin.H{"error": "Invalid user ID in context"})
+		// Parse and validate the JWT token here
+		userID, err := utils.ParseJWT(cookie)
+		if err != nil {
+			fmt.Println(err.Error())
+			ctx.JSON(401, gin.H{"error": "Unauthorized"})
 			ctx.Abort()
 			return
 		}

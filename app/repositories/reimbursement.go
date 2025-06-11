@@ -12,6 +12,7 @@ type ReimbursementRepository interface {
 	CreateReimbursement(reimbursement *models.Reimbursement) (*models.Reimbursement, error)
 	UpdateReimbursement(reimbursement *models.Reimbursement) (*models.Reimbursement, error)
 	DeleteReimbursement(id uint) error
+	SumReimbursement(userID uint, startDate, endDate string) (float64, error)
 }
 
 type reimbursementRepository struct {
@@ -68,4 +69,15 @@ func (r *reimbursementRepository) DeleteReimbursement(id uint) error {
 		return err
 	}
 	return nil
+}
+
+func (r *reimbursementRepository) SumReimbursement(userID uint, startDate, endDate string) (float64, error) {
+	var total float64
+	if err := r.db.Model(&models.Reimbursement{}).
+		Where("user_id = ? AND date BETWEEN ? AND ?", userID, startDate, endDate).
+		Select("SUM(amount)").
+		Scan(&total).Error; err != nil {
+		return 0, err
+	}
+	return total, nil
 }

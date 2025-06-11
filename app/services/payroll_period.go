@@ -3,6 +3,8 @@ package services
 import (
 	"context"
 	"errors"
+	"fmt"
+
 	"time"
 
 	"github.com/galiherlangga/go-attendance/app/models"
@@ -17,16 +19,23 @@ type PayrollPeriodService interface {
 	CreatePayrollPeriod(period *models.PayrollPeriod) (*models.PayrollPeriod, error)
 	UpdatePayrollPeriod(period *models.PayrollPeriod) (*models.PayrollPeriod, error)
 	DeletePayrollPeriod(id uint) error
+	RunPayroll(periodID uint) error
 }
 
 type payrollPeriodService struct {
 	repo  repositories.PayrollPeriodRepository
+	userRepo repositories.UserRepository
+	payslipService PayslipService
 	cache *redis.Client
 }
 
-func NewPayrollPeriodService(repo repositories.PayrollPeriodRepository, cache *redis.Client) PayrollPeriodService {
+const chunkSize = 20
+
+func NewPayrollPeriodService(repo repositories.PayrollPeriodRepository, userRepo repositories.UserRepository, payslipService PayslipService, cache *redis.Client) PayrollPeriodService {
 	return &payrollPeriodService{
 		repo:  repo,
+		userRepo: userRepo,
+		payslipService: payslipService,
 		cache: cache,
 	}
 }
@@ -116,4 +125,40 @@ func (s *payrollPeriodService) DeletePayrollPeriod(id uint) error {
 	s.cache.Del(ctx, cacheKey) // Invalidate cache after deletion
 
 	return nil
+}
+
+func (s *payrollPeriodService) RunPayroll(periodID uint) error {
+	period, err := s.repo.FindByID(periodID)
+	if err != nil {
+		return fmt.Errorf("failed to find payroll period: %w", err)
+	}
+	
+	if period == nil {
+		return fmt.Errorf("payroll period with ID %d not found", periodID)
+	}
+	
+	if period.IsProcessed {
+		return fmt.Errorf("payroll period %d is already processed", periodID)
+	}
+	
+	offset := 0
+	for {
+		employees, err := s.userRepo.GetAllEmployee(offset, chunkSize)
+		if err != nil {
+			return fmt.Errorf("failed to get employee for payroll period %d: %w", periodID, err)
+		}
+		if len(employees) == 0 {
+			break // No more employee to process
+		}
+
+		for _, employee := range employees {
+			err := s.payslipService.GeneratePayslip(employee.ID, periodID, *employee.MonthlySalary)
+			if err != nil {
+				return fmt.Errorf("failed to generate payslip for employee %d: %w", employee.ID, err)
+			}
+		}
+
+		offset += chunkSize
+	}
+	return s.repo.MarkAsProcessed(periodID)
 }

@@ -4,11 +4,12 @@ import "gorm.io/gorm"
 
 type User struct {
 	gorm.Model
-	Name     string `gorm:"not null;size:100" json:"name"`
-	Email    string `gorm:"uniqueIndex;not null;size:100" json:"email"`
-	Password string `gorm:"not null;size:100" json:"password"`
-	RoleID   uint   `gorm:"not null" json:"role_id"`
-	Role     Role   `gorm:"foreignKey:RoleID;references:ID" json:"role" readonly:"true"`
+	Name          string   `gorm:"not null;size:100" json:"name"`
+	Email         string   `gorm:"uniqueIndex;not null;size:100" json:"email"`
+	Password      string   `gorm:"not null;size:100" json:"password"`
+	RoleID        uint     `gorm:"not null" json:"role_id"`
+	MonthlySalary *float64 `gorm:"default:0" json:"monthly_salary"`
+	Role          Role     `gorm:"foreignKey:RoleID;references:ID" json:"role" readonly:"true"`
 }
 
 type LoginRequest struct {

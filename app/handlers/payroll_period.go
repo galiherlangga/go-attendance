@@ -57,7 +57,7 @@ func (h *PayrollPeriodHandler) GetPayrollPeriodByID(ctx *gin.Context) {
 func (h *PayrollPeriodHandler) CreatePayrollPeriod(ctx *gin.Context) {
 	var period models.PayrollPeriod
 	if err := ctx.ShouldBindJSON(&period); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input", "details": err.Error()})
 		return
 	}
 
@@ -99,4 +99,19 @@ func (h *PayrollPeriodHandler) DeletePayrollPeriod(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusNoContent, nil)
+}
+
+func (h *PayrollPeriodHandler) RunPayrollPeriod(ctx *gin.Context) {
+	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+
+	if err := h.service.RunPayroll(uint(id)); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to run payroll period"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "Payroll period successfully run"})
 }

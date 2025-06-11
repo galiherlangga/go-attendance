@@ -13,6 +13,7 @@ type PayrollPeriodRepository interface {
 	Create(period *models.PayrollPeriod) (*models.PayrollPeriod, error)
 	Update(period *models.PayrollPeriod) (*models.PayrollPeriod, error)
 	Delete(id uint) error
+	MarkAsProcessed(id uint) error
 }
 
 type payrollPeriodRepository struct {
@@ -82,4 +83,12 @@ func (r *payrollPeriodRepository) IsDateLocked(date string) (bool, error) {
 		return false, err // Other error
 	}
 	return count > 0, nil
+}
+
+func (r *payrollPeriodRepository) MarkAsProcessed(id uint) error {
+	period := &models.PayrollPeriod{Model: gorm.Model{ID: id}, IsProcessed: true}
+	if err := r.db.Model(period).Update("is_processed", true).Error; err != nil {
+		return err // Other error
+	}
+	return nil
 }

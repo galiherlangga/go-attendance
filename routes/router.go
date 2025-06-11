@@ -25,12 +25,32 @@ func SetupRouter(db *gorm.DB, cache *redis.Client) *gin.Engine {
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
-
-	// User modules
+	
+	// Init repositories
 	userRepo := repositories.NewUserRepository(db)
+	payslipRepo := repositories.NewPayslipRepository(db)
+	payrollPeriodRepo := repositories.NewPayrollPeriodRepository(db)
+	attendanceRepo := repositories.NewAttendanceRepository(db)
+	overtimeRepo := repositories.NewOvertimeRepository(db)
+	reimbursementRepo := repositories.NewReimbursementRepository(db)
+	
+	// Init services
 	userService := services.NewUserService(userRepo)
+	payslipService := services.NewPayslipService(payslipRepo, attendanceRepo, overtimeRepo, reimbursementRepo, payrollPeriodRepo, userRepo)
+	payrollPeriodService := services.NewPayrollPeriodService(payrollPeriodRepo, userRepo, payslipService, cache)
+	attendanceService := services.NewAttendanceService(attendanceRepo)
+	overtimeService := services.NewOvertimeService(overtimeRepo, cache)
+	reimbursementService := services.NewReimbursementService(reimbursementRepo, payrollPeriodRepo, cache)
+	
+	// Init handlers
 	userHandler := handlers.NewUserHandler(userService)
-
+	payrollPeriodHandler := handlers.NewPayrollPeriodHandler(payrollPeriodService)
+	attendanceHandler := handlers.NewAttendanceHandler(attendanceService, userService)
+	overtimeHandler := handlers.NewOvertimeHandler(overtimeService, userService)
+	reimbursementHandler := handlers.NewReimbursementHandler(reimbursementService, userService)
+	
+	
+	// Health check route
 	router.GET("/health", func(ctx *gin.Context) {
 		sqlDB, err := db.DB()
 		if err != nil || sqlDB.Ping() != nil {
@@ -39,26 +59,6 @@ func SetupRouter(db *gorm.DB, cache *redis.Client) *gin.Engine {
 		}
 		ctx.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
-	
-	// Payroll period modules
-	payrollPeriodRepo := repositories.NewPayrollPeriodRepository(db)
-	payrollPeriodService := services.NewPayrollPeriodService(payrollPeriodRepo, cache)
-	payrollPeriodHandler := handlers.NewPayrollPeriodHandler(payrollPeriodService)
-	
-	// Attendance modules
-	attendanceRepo := repositories.NewAttendanceRepository(db)
-	attendanceService := services.NewAttendanceService(attendanceRepo)
-	attendanceHandler := handlers.NewAttendanceHandler(attendanceService, userService)
-	
-	// Overtime modules
-	overtimeRepo := repositories.NewOvertimeRepository(db)
-	overtimeService := services.NewOvertimeService(overtimeRepo, cache)
-	overtimeHandler := handlers.NewOvertimeHandler(overtimeService, userService)
-	
-	// Reimbursement modules
-	reimbursementRepo := repositories.NewReimbursementRepository(db)
-	reimbursementService := services.NewReimbursementService(reimbursementRepo, payrollPeriodRepo, cache)
-	reimbursementHandler := handlers.NewReimbursementHandler(reimbursementService, userService)
 	
 	// Auth routes
 	authGroup := router.Group("/auth")
@@ -75,6 +75,7 @@ func SetupRouter(db *gorm.DB, cache *redis.Client) *gin.Engine {
 		payrollPeriodGroup.POST("", payrollPeriodHandler.CreatePayrollPeriod)
 		payrollPeriodGroup.PUT("/:id", payrollPeriodHandler.UpdatePayrollPeriod)
 		payrollPeriodGroup.DELETE("/:id", payrollPeriodHandler.DeletePayrollPeriod)
+		payrollPeriodGroup.POST("/:id/run-payroll", payrollPeriodHandler.RunPayrollPeriod)
 	}
 	
 	// Attendance routes
