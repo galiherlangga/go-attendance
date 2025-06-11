@@ -17,4 +17,15 @@ type Payslip struct {
 	OvertimeEarnings   float64   `json:"overtime_earnings" gorm:"not null"`
 	TotalReimbursement float64   `json:"total_reimbursement" gorm:"not null"`
 	TakeHomePay        float64   `json:"take_home_pay" gorm:"not null"`
+	User               User      `json:"user" gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" readonly:"true"`
+}
+
+type PayslipSummary struct {
+	Items []PayslipSummaryItem `json:"items"`
+}
+
+type PayslipSummaryItem struct {
+	UserID      uint    `json:"user_id"`
+	Name        string  `json:"name"`
+	TakeHomePay float64 `json:"take_home_pay"`
 }

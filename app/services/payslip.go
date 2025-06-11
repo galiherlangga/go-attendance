@@ -12,8 +12,8 @@ import (
 
 type PayslipService interface {
 	GeneratePayslip(userID uint, periodID uint, monthlySalary float64) error
-	GetSummary(periodID uint) (map[uint]float64, float64, error)
-	
+	GetSummary(periodID uint) (*models.PayslipSummary, float64, error)
+	GetPayslipByUserAndPeriod(userID uint, periodID uint) (*models.Payslip, error)
 }
 
 type payslipService struct {
@@ -83,19 +83,36 @@ func (s *payslipService) GeneratePayslip(userID uint, periodID uint, monthlySala
 	return nil
 }
 
-func (s *payslipService) GetSummary(periodID uint) (map[uint]float64, float64, error) {
+func (s *payslipService) GetSummary(periodID uint) (*models.PayslipSummary, float64, error) {
 	payslips, err := s.repo.GetByPeriod(periodID)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	summary := make(map[uint]float64)
+	var summaryItems []models.PayslipSummaryItem
 	total := 0.0
 
 	for _, payslip := range payslips {
-		summary[payslip.UserID] = payslip.TakeHomePay
+		summaryItems = append(summaryItems, models.PayslipSummaryItem{
+			UserID:      payslip.UserID,
+			Name:        payslip.User.Name,
+			TakeHomePay: payslip.TakeHomePay,
+		})
 		total += payslip.TakeHomePay
 	}
 
-	return summary, total, nil
+	total = math.Round(total * 100) / 100
+
+	return &models.PayslipSummary{Items: summaryItems}, total, nil
+}
+
+func (s *payslipService) GetPayslipByUserAndPeriod(userID uint, periodID uint) (*models.Payslip, error) {
+	payslip, err := s.repo.GetByUserAndPeriod(userID, periodID)
+	if err != nil {
+		return nil, err
+	}
+	if payslip == nil {
+		return nil, errors.New("payslip not found")
+	}
+	return payslip, nil
 }

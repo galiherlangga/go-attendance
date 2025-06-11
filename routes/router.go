@@ -44,6 +44,7 @@ func SetupRouter(db *gorm.DB, cache *redis.Client) *gin.Engine {
 	
 	// Init handlers
 	userHandler := handlers.NewUserHandler(userService)
+	payslipHandler := handlers.NewPayslipHandler(payslipService, userService)
 	payrollPeriodHandler := handlers.NewPayrollPeriodHandler(payrollPeriodService)
 	attendanceHandler := handlers.NewAttendanceHandler(attendanceService, userService)
 	overtimeHandler := handlers.NewOvertimeHandler(overtimeService, userService)
@@ -108,6 +109,18 @@ func SetupRouter(db *gorm.DB, cache *redis.Client) *gin.Engine {
 		reimbursementGroup.POST("", reimbursementHandler.CreateReimbursement)
 		reimbursementGroup.PUT("/:id", reimbursementHandler.UpdateReimbursement)
 		reimbursementGroup.DELETE("/:id", reimbursementHandler.DeleteReimbursement)
+	}
+	
+	// Payslip routes
+	payslipGroup := router.Group("/payslips")
+	payslipGroup.Use(middleware.JWTAuthMiddleware())
+	{
+		payslipGroup.GET("/:period_id", payslipHandler.GetPayslipByUserAndPeriod)
+	}
+	payslipAdminGroup := router.Group("/payslips")
+	payslipAdminGroup.Use(middleware.IsAdminMiddleware(userRepo))
+	{
+		payslipAdminGroup.GET("/summary/:period_id", payslipHandler.GetPayslipSummary)
 	}
 
 	return router
