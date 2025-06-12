@@ -16,8 +16,8 @@ const maxHourLimit = 3
 type OvertimeService interface {
 	GetOvertimeList(userID uint, pagination utils.Pagination) ([]*models.Overtime, int64, error)
 	GetOvertimeByID(id uint) (*models.Overtime, error)
-	SubmitOvertime(overtime *models.Overtime) (*models.Overtime, error)
-	UpdateOvertime(overtime *models.Overtime) (*models.Overtime, error)
+	SubmitOvertime(ctx context.Context, overtime *models.Overtime) (*models.Overtime, error)
+	UpdateOvertime(ctx context.Context, overtime *models.Overtime) (*models.Overtime, error)
 	DeleteOvertime(id uint) error
 }
 
@@ -76,8 +76,7 @@ func (s *overtimeService) GetOvertimeByID(id uint) (*models.Overtime, error) {
 	return overtime, nil
 }
 
-func (s *overtimeService) SubmitOvertime(overtime *models.Overtime) (*models.Overtime, error) {
-	ctx := context.Background()
+func (s *overtimeService) SubmitOvertime(ctx context.Context, overtime *models.Overtime) (*models.Overtime, error) {
 	exists, err := s.repo.GetOvertimeByUserAndDate(overtime.UserID, overtime.Date)
 	if err != nil {
 		return nil, err
@@ -94,11 +93,10 @@ func (s *overtimeService) SubmitOvertime(overtime *models.Overtime) (*models.Ove
 	if err != nil {
 		return nil, err
 	}
-	return s.repo.CreateOvertime(overtime)
+	return s.repo.CreateOvertime(ctx, overtime)
 }
 
-func (s *overtimeService) UpdateOvertime(overtime *models.Overtime) (*models.Overtime, error) {
-	ctx := context.Background()
+func (s *overtimeService) UpdateOvertime(ctx context.Context, overtime *models.Overtime) (*models.Overtime, error) {
 	cacheKey := utils.BuildKey("overtime", overtime.ID)
 
 	if overtime.Hours > maxHourLimit {
@@ -106,7 +104,7 @@ func (s *overtimeService) UpdateOvertime(overtime *models.Overtime) (*models.Ove
 	}
 
 	// Update in DB
-	updatedOvertime, err := s.repo.UpdateOvertime(overtime)
+	updatedOvertime, err := s.repo.UpdateOvertime(ctx, overtime)
 	if err != nil {
 		return nil, err
 	}

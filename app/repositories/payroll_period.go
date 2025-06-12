@@ -1,6 +1,8 @@
 package repositories
 
 import (
+	"context"
+
 	"github.com/galiherlangga/go-attendance/app/models"
 	"github.com/galiherlangga/go-attendance/pkg/utils"
 	"gorm.io/gorm"
@@ -10,8 +12,8 @@ type PayrollPeriodRepository interface {
 	FindAll(pagination utils.Pagination) ([]*models.PayrollPeriod, int64, error)
 	FindByID(id uint) (*models.PayrollPeriod, error)
 	IsDateLocked(date string) (bool, error)
-	Create(period *models.PayrollPeriod) (*models.PayrollPeriod, error)
-	Update(period *models.PayrollPeriod) (*models.PayrollPeriod, error)
+	Create(ctx context.Context, period *models.PayrollPeriod) (*models.PayrollPeriod, error)
+	Update(ctx context.Context, period *models.PayrollPeriod) (*models.PayrollPeriod, error)
 	Delete(id uint) error
 	MarkAsProcessed(id uint) error
 }
@@ -29,12 +31,12 @@ func NewPayrollPeriodRepository(db *gorm.DB) PayrollPeriodRepository {
 func (r *payrollPeriodRepository) FindAll(pagination utils.Pagination) ([]*models.PayrollPeriod, int64, error) {
 	var periods []*models.PayrollPeriod
 	var total int64
-	
+
 	offset := (pagination.Page - 1) * pagination.Limit
 	query := r.db.Model(&models.PayrollPeriod{})
-	
+
 	query.Count(&total)
-	
+
 	err := query.
 		Limit(pagination.Limit).
 		Offset(offset).
@@ -54,18 +56,40 @@ func (r *payrollPeriodRepository) FindByID(id uint) (*models.PayrollPeriod, erro
 	return period, nil
 }
 
-func (r *payrollPeriodRepository) Create(period *models.PayrollPeriod) (*models.PayrollPeriod, error) {
-	if err := r.db.Create(period).Error; err != nil {
+func (r *payrollPeriodRepository) Create(ctx context.Context, period *models.PayrollPeriod) (*models.PayrollPeriod, error) {
+	if err := r.db.WithContext(ctx).Create(period).Error; err != nil {
 		return nil, err // Other error
 	}
 	return period, nil
 }
 
-func (r *payrollPeriodRepository) Update(period *models.PayrollPeriod) (*models.PayrollPeriod, error) {
-	if err := r.db.Save(period).Error; err != nil {
-		return nil, err // Other error
+func (r *payrollPeriodRepository) Update(ctx context.Context, period *models.PayrollPeriod) (*models.PayrollPeriod, error) {
+	// Step 1: Load existing record for preserved fields
+	existingPeriod, err := r.FindByID(period.ID)
+	if err != nil {
+		return nil, err
 	}
-	return period, nil
+
+	// Step 2: Preserve immutable fields
+	period.CreatedAt = existingPeriod.CreatedAt
+	period.CreatedBy = existingPeriod.CreatedBy
+	period.RequestID = existingPeriod.RequestID
+
+	// Step 3: Perform the update
+	if err := r.db.WithContext(ctx).
+		Model(&models.PayrollPeriod{}).
+		Where("id = ?", period.ID).
+		Updates(period).Error; err != nil {
+		return nil, err
+	}
+
+	// Step 4: Re-fetch the updated record to get accurate UpdatedAt, etc.
+	var updated models.PayrollPeriod
+	if err := r.db.WithContext(ctx).First(&updated, period.ID).Error; err != nil {
+		return nil, err
+	}
+
+	return &updated, nil
 }
 
 func (r *payrollPeriodRepository) Delete(id uint) error {
@@ -86,9 +110,10 @@ func (r *payrollPeriodRepository) IsDateLocked(date string) (bool, error) {
 }
 
 func (r *payrollPeriodRepository) MarkAsProcessed(id uint) error {
-	period := &models.PayrollPeriod{Model: gorm.Model{ID: id}, IsProcessed: true}
-	if err := r.db.Model(period).Update("is_processed", true).Error; err != nil {
-		return err // Other error
+	if err := r.db.Model(&models.PayrollPeriod{}).
+		Where("id = ?", id).
+		Update("is_processed", true).Error; err != nil {
+		return err
 	}
 	return nil
 }

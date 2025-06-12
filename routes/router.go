@@ -71,7 +71,7 @@ func SetupRouter(db *gorm.DB, cache *redis.Client) *gin.Engine {
 
 	// Payroll period routes
 	payrollPeriodGroup := router.Group("/payroll-periods")
-	payrollPeriodGroup.Use(middleware.IsAdminMiddleware(userRepo))
+	payrollPeriodGroup.Use(middleware.IsAdminMiddleware(userRepo), middleware.AuditMiddleware())
 	{
 		payrollPeriodGroup.GET("", payrollPeriodHandler.GetPayrollPeriodList)
 		payrollPeriodGroup.GET("/:id", payrollPeriodHandler.GetPayrollPeriodByID)
@@ -83,7 +83,7 @@ func SetupRouter(db *gorm.DB, cache *redis.Client) *gin.Engine {
 
 	// Attendance routes
 	attendanceGroup := router.Group("/attendances")
-	attendanceGroup.Use(middleware.JWTAuthMiddleware())
+	attendanceGroup.Use(middleware.JWTAuthMiddleware(), middleware.AuditMiddleware())
 	{
 		attendanceGroup.POST("/check-in", attendanceHandler.CheckIn)
 		attendanceGroup.POST("/check-out", attendanceHandler.CheckOut)
@@ -93,7 +93,7 @@ func SetupRouter(db *gorm.DB, cache *redis.Client) *gin.Engine {
 
 	// Overtime routes
 	overtimeGroup := router.Group("/overtimes")
-	overtimeGroup.Use(middleware.JWTAuthMiddleware())
+	overtimeGroup.Use(middleware.JWTAuthMiddleware(), middleware.AuditMiddleware())
 	{
 		overtimeGroup.GET("", overtimeHandler.GetOvertimeList)
 		overtimeGroup.GET("/:id", overtimeHandler.GetOvertimeByID)
@@ -104,7 +104,7 @@ func SetupRouter(db *gorm.DB, cache *redis.Client) *gin.Engine {
 
 	// Reimbursement routes
 	reimbursementGroup := router.Group("/reimbursements")
-	reimbursementGroup.Use(middleware.JWTAuthMiddleware())
+	reimbursementGroup.Use(middleware.JWTAuthMiddleware(), middleware.AuditMiddleware())
 	{
 		reimbursementGroup.GET("", reimbursementHandler.GetReimbursementList)
 		reimbursementGroup.GET("/:id", reimbursementHandler.GetReimbursementByID)
@@ -115,12 +115,12 @@ func SetupRouter(db *gorm.DB, cache *redis.Client) *gin.Engine {
 
 	// Payslip routes
 	payslipGroup := router.Group("/payslips")
-	payslipGroup.Use(middleware.JWTAuthMiddleware())
+	payslipGroup.Use(middleware.JWTAuthMiddleware(), middleware.AuditMiddleware())
 	{
 		payslipGroup.GET("/:period_id", payslipHandler.GetPayslipByUserAndPeriod)
 	}
 	payslipAdminGroup := router.Group("/payslips")
-	payslipAdminGroup.Use(middleware.IsAdminMiddleware(userRepo))
+	payslipAdminGroup.Use(middleware.IsAdminMiddleware(userRepo), middleware.AuditMiddleware())
 	{
 		payslipAdminGroup.GET("/summary/:period_id", payslipHandler.GetPayslipSummary)
 	}

@@ -1,12 +1,14 @@
 package repositories
 
 import (
+	"context"
+
 	"github.com/galiherlangga/go-attendance/app/models"
 	"gorm.io/gorm"
 )
 
 type PayslipRepository interface {
-	Create(payslip *models.Payslip) error
+	Create(ctx context.Context, payslip *models.Payslip) error
 	GetByUserAndPeriod(userID uint, periodID uint) (*models.Payslip, error)
 	GetByID(id uint) (*models.Payslip, error)
 	GetByPeriod(periodID uint) ([]*models.Payslip, error)
@@ -23,8 +25,8 @@ func NewPayslipRepository(db *gorm.DB) PayslipRepository {
 	}
 }
 
-func (r *payslipRepository) Create(payslip *models.Payslip) error {
-	return r.db.Create(payslip).Error
+func (r *payslipRepository) Create(ctx context.Context, payslip *models.Payslip) error {
+	return r.db.WithContext(ctx).Create(payslip).Error
 }
 
 func (r *payslipRepository) GetByUserAndPeriod(userID uint, periodID uint) (*models.Payslip, error) {

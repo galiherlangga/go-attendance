@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 
@@ -11,13 +12,13 @@ import (
 )
 
 type ReimbursementHandler struct {
-	service services.ReimbursementService
+	service     services.ReimbursementService
 	userService services.UserService
 }
 
 func NewReimbursementHandler(service services.ReimbursementService, userService services.UserService) *ReimbursementHandler {
 	return &ReimbursementHandler{
-		service: service,
+		service:     service,
 		userService: userService,
 	}
 }
@@ -88,7 +89,6 @@ func (h *ReimbursementHandler) GetReimbursementList(ctx *gin.Context) {
 	})
 }
 
-
 // GetReimbursementByID godoc
 // @Summary      Get reimbursement by ID
 // @Description  Retrieves a specific reimbursement record by its ID. Admins can access any record, while users can only access their own.
@@ -117,7 +117,6 @@ func (h *ReimbursementHandler) GetReimbursementByID(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, reimbursement)
 }
-
 
 // CreateReimbursement godoc
 // @Summary      Create reimbursement
@@ -150,13 +149,17 @@ func (h *ReimbursementHandler) CreateReimbursement(ctx *gin.Context) {
 		return
 	}
 
+	requestID := ctx.GetString("request_id")
+	ctx.Request = ctx.Request.WithContext(context.WithValue(ctx.Request.Context(), "user_id", currentUserIDUint))
+	ctx.Request = ctx.Request.WithContext(context.WithValue(ctx.Request.Context(), "request_id", requestID))
+
 	reimbursement := models.Reimbursement{
 		UserID: currentUserIDUint,
-		Date: reimbursementReq.Date,
+		Date:   reimbursementReq.Date,
 		Amount: reimbursementReq.Amount,
 		Note:   reimbursementReq.Note,
 	}
-	newReimbursement, err := h.service.SubmitReimbursement(&reimbursement)
+	newReimbursement, err := h.service.SubmitReimbursement(ctx, &reimbursement)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create reimbursement"})
 		return
@@ -164,7 +167,6 @@ func (h *ReimbursementHandler) CreateReimbursement(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusCreated, newReimbursement)
 }
-
 
 // UpdateReimbursement godoc
 // @Summary      Update reimbursement
@@ -193,6 +195,11 @@ func (h *ReimbursementHandler) UpdateReimbursement(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid reimbursement ID"})
 		return
 	}
+	
+	userID := ctx.GetUint("user_id")
+	requestID := ctx.GetString("request_id")
+	ctx.Request = ctx.Request.WithContext(context.WithValue(ctx.Request.Context(), "user_id", userID))
+	ctx.Request = ctx.Request.WithContext(context.WithValue(ctx.Request.Context(), "request_id", requestID))
 
 	reimbursement, err := h.service.GetReimbursementByID(uint(id))
 	if err != nil {
@@ -202,7 +209,7 @@ func (h *ReimbursementHandler) UpdateReimbursement(ctx *gin.Context) {
 	reimbursement.Date = reimbursementReq.Date
 	reimbursement.Amount = reimbursementReq.Amount
 	reimbursement.Note = reimbursementReq.Note
-	updatedReimbursement, err := h.service.UpdateReimbursement(reimbursement)
+	updatedReimbursement, err := h.service.UpdateReimbursement(ctx, reimbursement)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update reimbursement"})
 		return
@@ -210,7 +217,6 @@ func (h *ReimbursementHandler) UpdateReimbursement(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, updatedReimbursement)
 }
-
 
 // DeleteReimbursement godoc
 // @Summary      Delete reimbursement

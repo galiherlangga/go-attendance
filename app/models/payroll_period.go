@@ -2,12 +2,10 @@ package models
 
 import (
 	"time"
-
-	"gorm.io/gorm"
 )
 
 type PayrollPeriod struct {
-	gorm.Model
+	BaseModel
 	StartDate   time.Time `json:"start_date" gorm:"not null"`
 	EndDate     time.Time `json:"end_date" gorm:"not null"`
 	IsProcessed bool      `json:"is_processed" gorm:"default:false"`

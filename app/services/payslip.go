@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"math"
 	"time"
@@ -11,7 +12,7 @@ import (
 )
 
 type PayslipService interface {
-	GeneratePayslip(userID uint, periodID uint, monthlySalary float64) error
+	GeneratePayslip(ctx context.Context, userID uint, periodID uint, monthlySalary float64) error
 	GetSummary(periodID uint) (*models.PayslipSummary, float64, error)
 	GetPayslipByUserAndPeriod(userID uint, periodID uint) (*models.Payslip, error)
 }
@@ -41,7 +42,7 @@ func NewPayslipService(
 	}
 }
 
-func (s *payslipService) GeneratePayslip(userID uint, periodID uint, monthlySalary float64) error {
+func (s *payslipService) GeneratePayslip(ctx context.Context, userID uint, periodID uint, monthlySalary float64) error {
 	existing, _ := s.repo.GetByUserAndPeriod(userID, periodID)
 	if existing != nil {
 		return errors.New("payslip already generated for this period")
@@ -77,7 +78,7 @@ func (s *payslipService) GeneratePayslip(userID uint, periodID uint, monthlySala
 		TotalReimbursement: reimbursements,
 		TakeHomePay: total,
 	}
-	if err := s.repo.Create(payslip); err != nil {
+	if err := s.repo.Create(ctx, payslip); err != nil {
 		return err
 	}
 	return nil

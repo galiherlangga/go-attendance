@@ -2,12 +2,10 @@ package models
 
 import (
 	"time"
-
-	"gorm.io/gorm"
 )
 
 type Reimbursement struct {
-	gorm.Model
+	BaseModel
 	UserID uint      `json:"user_id" gorm:"not null,uniqueIndex:idx_user_date"`
 	Date   time.Time `json:"date" gorm:"type:DATE;not null,uniqueIndex:idx_user_date"`
 	Amount float64   `json:"amount" gorm:"not null"`

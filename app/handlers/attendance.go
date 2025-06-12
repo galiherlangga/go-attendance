@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -20,7 +21,6 @@ func NewAttendanceHandler(service services.AttendanceService, userService servic
 		userService: userService,
 	}
 }
-
 
 // GetAttendanceList godoc
 // @Summary      Get attendance list
@@ -82,7 +82,6 @@ func (h *AttendanceHandler) GetAttendanceList(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"data": attendances})
 }
 
-
 // RetrieveAttendance godoc
 // @Summary      Retrieve attendance by ID
 // @Description  Retrieves a specific attendance record by its ID. Admins can access any record, while users can only access their own.
@@ -113,7 +112,6 @@ func (h *AttendanceHandler) RetrieveAttendance(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"data": attendance})
 }
 
-
 // CheckIn godoc
 // @Summary      Check in attendance
 // @Description  Records a check-in for the current user. The user ID is obtained from the JWT token.
@@ -138,14 +136,18 @@ func (h *AttendanceHandler) CheckIn(ctx *gin.Context) {
 		return
 	}
 
-	attendance, err := h.service.CheckIn(currentUserIDUint)
+	userID := ctx.GetUint("user_id")
+	requestID := ctx.GetString("request_id")
+	ctx.Request = ctx.Request.WithContext(context.WithValue(ctx.Request.Context(), "user_id", userID))
+	ctx.Request = ctx.Request.WithContext(context.WithValue(ctx.Request.Context(), "request_id", requestID))
+
+	attendance, err := h.service.CheckIn(ctx, currentUserIDUint)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	ctx.JSON(http.StatusOK, gin.H{"data": attendance})
 }
-
 
 // CheckOut godoc
 // @Summary      Check out attendance
@@ -171,8 +173,12 @@ func (h *AttendanceHandler) CheckOut(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid user_id"})
 		return
 	}
+	
+	requestID := ctx.GetString("request_id")
+	ctx.Request = ctx.Request.WithContext(context.WithValue(ctx.Request.Context(), "user_id", userID))
+	ctx.Request = ctx.Request.WithContext(context.WithValue(ctx.Request.Context(), "request_id", requestID))
 
-	attendance, err := h.service.CheckOut(uint(userID))
+	attendance, err := h.service.CheckOut(ctx, uint(userID))
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

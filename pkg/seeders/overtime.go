@@ -19,7 +19,11 @@ func SeedOvertime(db *gorm.DB) {
 			overtime := models.Overtime{
 				UserID: user.ID,
 				Date:   time.Now().AddDate(0, 0, -i),
-				Hours:  gofakeit.IntRange(1, 3), // Example fixed hours for overtime
+				Hours:  gofakeit.IntRange(1, 3),
+				BaseModel: models.BaseModel{
+					CreatedBy: &user.ID,
+					UpdatedBy: &user.ID,
+				},
 			}
 			if err := db.Create(&overtime).Error; err != nil {
 				panic("Failed to create overtime record: " + err.Error())

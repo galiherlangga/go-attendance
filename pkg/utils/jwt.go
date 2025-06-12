@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -32,6 +33,30 @@ func ParseJWT(tokenStr string) (uint, error) {
 		}
 	}
 	return 0, fmt.Errorf("user_id not found in token claims")
+}
+
+func GetUserFromContext(ctx *gin.Context) (uint, error) {
+	token, err := ctx.Cookie("access_token")
+	if err != nil {
+		// If cookie not found, check Authorization header
+		authHeader := ctx.GetHeader("Authorization")
+		if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+			token = authHeader[7:]
+		} else {
+			return 0, fmt.Errorf("unauthorized – token missing")
+		}
+	}
+
+	// Parse and validate the JWT token here
+	userID, err := ParseJWT(token)
+	if err != nil {
+		fmt.Println(err.Error())
+		return 0, err
+	}
+	if userID == 0 {
+		return 0, fmt.Errorf("unauthorized – user ID not found")
+	}
+	return userID, nil
 }
 
 func generateJWT(userID uint, duration time.Duration) (string, error) {

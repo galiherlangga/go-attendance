@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"math"
 	"net/http"
 	"strconv"
@@ -100,7 +101,12 @@ func (h *PayrollPeriodHandler) CreatePayrollPeriod(ctx *gin.Context) {
 		return
 	}
 
-	createdPeriod, err := h.service.CreatePayrollPeriod(&period)
+	userID := ctx.GetUint("user_id")
+	requestID := ctx.GetString("request_id")
+	ctx.Request = ctx.Request.WithContext(context.WithValue(ctx.Request.Context(), "user_id", userID))
+	ctx.Request = ctx.Request.WithContext(context.WithValue(ctx.Request.Context(), "request_id", requestID))
+
+	createdPeriod, err := h.service.CreatePayrollPeriod(ctx, &period)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create payroll period"})
 		return
@@ -108,7 +114,6 @@ func (h *PayrollPeriodHandler) CreatePayrollPeriod(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusCreated, gin.H{"data": createdPeriod})
 }
-
 
 // UpdatePayrollPeriod godoc
 // @Summary      Update a payroll period
@@ -130,8 +135,19 @@ func (h *PayrollPeriodHandler) UpdatePayrollPeriod(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
+	periodID, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+	period.ID = uint(periodID)
 
-	updatedPeriod, err := h.service.UpdatePayrollPeriod(&period)
+	userID := ctx.GetUint("user_id")
+	requestID := ctx.GetString("request_id")
+	ctx.Request = ctx.Request.WithContext(context.WithValue(ctx.Request.Context(), "user_id", userID))
+	ctx.Request = ctx.Request.WithContext(context.WithValue(ctx.Request.Context(), "request_id", requestID))
+
+	updatedPeriod, err := h.service.UpdatePayrollPeriod(ctx, &period)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update payroll period"})
 		return
@@ -139,7 +155,6 @@ func (h *PayrollPeriodHandler) UpdatePayrollPeriod(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{"data": updatedPeriod})
 }
-
 
 // DeletePayrollPeriod godoc
 // @Summary      Delete a payroll period
@@ -169,7 +184,6 @@ func (h *PayrollPeriodHandler) DeletePayrollPeriod(ctx *gin.Context) {
 	ctx.JSON(http.StatusNoContent, nil)
 }
 
-
 // RunPayrollPeriod godoc
 // @Summary      Run payroll period
 // @Description  Runs the payroll calculations for a specific payroll period. Admin only.
@@ -190,7 +204,10 @@ func (h *PayrollPeriodHandler) RunPayrollPeriod(ctx *gin.Context) {
 		return
 	}
 
-	if err := h.service.RunPayroll(uint(id)); err != nil {
+	userID := ctx.GetUint("user_id")
+	ctx.Request = ctx.Request.WithContext(context.WithValue(ctx.Request.Context(), "user_id", userID))
+
+	if err := h.service.RunPayroll(ctx, uint(id)); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to run payroll period"})
 		return
 	}

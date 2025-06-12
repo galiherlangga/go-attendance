@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -14,8 +15,8 @@ import (
 type AttendanceService interface {
 	GetAttendanceList(userID uint, startDate, endDate string) ([]*models.Attendance, error)
 	GetAttendanceByID(id uint) (*models.Attendance, error)
-	CheckIn(userID uint) (*models.Attendance, error)
-	CheckOut(userID uint) (*models.Attendance, error)
+	CheckIn(ctx context.Context, userID uint) (*models.Attendance, error)
+	CheckOut(ctx context.Context, userID uint) (*models.Attendance, error)
 }
 
 type attendanceService struct {
@@ -36,7 +37,7 @@ func (s *attendanceService) GetAttendanceByID(id uint) (*models.Attendance, erro
 	return s.repo.GetAttendanceByID(id)
 }
 
-func (s *attendanceService) CheckIn(userID uint) (*models.Attendance, error) {
+func (s *attendanceService) CheckIn(ctx context.Context, userID uint) (*models.Attendance, error) {
 	today := time.Now().Truncate(24 * time.Hour)
 	if utils.IsWeekend(today) {
 		return nil, errors.New("cannot submit attendance on weekends")
@@ -53,13 +54,13 @@ func (s *attendanceService) CheckIn(userID uint) (*models.Attendance, error) {
 			Date:    today,
 			CheckIn: &now,
 		}
-		return s.repo.CreateAttendance(att)
+		return s.repo.CreateAttendance(ctx, att)
 	}
 
 	return nil, errors.New("attendance already exists for today")
 }
 
-func (s *attendanceService) CheckOut(userID uint) (*models.Attendance, error) {
+func (s *attendanceService) CheckOut(ctx context.Context, userID uint) (*models.Attendance, error) {
 	today := time.Now().Truncate(24 * time.Hour)
 	if utils.IsWeekend(today) {
 		return nil, errors.New("cannot submit attendance on weekends")
@@ -81,5 +82,5 @@ func (s *attendanceService) CheckOut(userID uint) (*models.Attendance, error) {
 
 	now := time.Now()
 	att.CheckOut = &now
-	return s.repo.UpdateAttendance(att)
+	return s.repo.UpdateAttendance(ctx, att)
 }

@@ -28,6 +28,10 @@ func SeedAttendances(db *gorm.DB) {
 				Date:      date,
 				CheckIn:   &checkinTime,
 				CheckOut:  &checkoutTime,
+				BaseModel: models.BaseModel{
+					CreatedBy: &user.ID,
+					UpdatedBy: &user.ID,
+				},
 			}
 			if err := db.Create(&attendance).Error; err != nil {
 				panic("Failed to create attendance record: " + err.Error())

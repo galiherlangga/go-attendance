@@ -13,8 +13,8 @@ import (
 type ReimbursementService interface {
 	GetReimbursementList(userID uint, pagination utils.Pagination) ([]*models.Reimbursement, int64, error)
 	GetReimbursementByID(id uint) (*models.Reimbursement, error)
-	SubmitReimbursement(reimbursement *models.Reimbursement) (*models.Reimbursement, error)
-	UpdateReimbursement(reimbursement *models.Reimbursement) (*models.Reimbursement, error)
+	SubmitReimbursement(ctx context.Context, reimbursement *models.Reimbursement) (*models.Reimbursement, error)
+	UpdateReimbursement(ctx context.Context, reimbursement *models.Reimbursement) (*models.Reimbursement, error)
 	DeleteReimbursement(id uint) error
 }
 
@@ -76,8 +76,7 @@ func (s *reimbursementService) GetReimbursementByID(id uint) (*models.Reimbursem
 	return reimbursement, nil
 }
 
-func (s *reimbursementService) SubmitReimbursement(reimbursement *models.Reimbursement) (*models.Reimbursement, error) {
-	ctx := context.Background()
+func (s *reimbursementService) SubmitReimbursement(ctx context.Context, reimbursement *models.Reimbursement) (*models.Reimbursement, error) {
 	if reimbursement.Amount <= 0 {
 		return nil, errors.New("reimbursement amount must be greater than zero")
 	}
@@ -91,7 +90,7 @@ func (s *reimbursementService) SubmitReimbursement(reimbursement *models.Reimbur
 	}
 
 	// Create reimbursement in DB
-	createdReimbursement, err := s.repo.CreateReimbursement(reimbursement)
+	createdReimbursement, err := s.repo.CreateReimbursement(ctx, reimbursement)
 	if err != nil {
 		return nil, err
 	}
@@ -105,9 +104,7 @@ func (s *reimbursementService) SubmitReimbursement(reimbursement *models.Reimbur
 	return createdReimbursement, nil
 }
 
-func (s *reimbursementService) UpdateReimbursement(reimbursement *models.Reimbursement) (*models.Reimbursement, error) {
-	ctx := context.Background()
-	
+func (s *reimbursementService) UpdateReimbursement(ctx context.Context, reimbursement *models.Reimbursement) (*models.Reimbursement, error) {
 	isLocked, err := s.payrollPeriodRepo.IsDateLocked(reimbursement.Date.Format("2006-01-02"))
 	if err != nil {
 		return nil, err
@@ -117,7 +114,7 @@ func (s *reimbursementService) UpdateReimbursement(reimbursement *models.Reimbur
 	}
 
 	// Update reimbursement in DB
-	updatedReimbursement, err := s.repo.UpdateReimbursement(reimbursement)
+	updatedReimbursement, err := s.repo.UpdateReimbursement(ctx, reimbursement)
 	if err != nil {
 		return nil, err
 	}

@@ -1,6 +1,8 @@
 package repositories
 
 import (
+	"context"
+
 	"github.com/galiherlangga/go-attendance/app/models"
 	"github.com/galiherlangga/go-attendance/pkg/utils"
 	"gorm.io/gorm"
@@ -9,8 +11,8 @@ import (
 type ReimbursementRepository interface {
 	GetReimbursementList(userID uint, pagination utils.Pagination) ([]*models.Reimbursement, int64, error)
 	GetReimbursementByID(id uint) (*models.Reimbursement, error)
-	CreateReimbursement(reimbursement *models.Reimbursement) (*models.Reimbursement, error)
-	UpdateReimbursement(reimbursement *models.Reimbursement) (*models.Reimbursement, error)
+	CreateReimbursement(ctx context.Context, reimbursement *models.Reimbursement) (*models.Reimbursement, error)
+	UpdateReimbursement(ctx context.Context, reimbursement *models.Reimbursement) (*models.Reimbursement, error)
 	DeleteReimbursement(id uint) error
 	SumReimbursement(userID uint, startDate, endDate string) (float64, error)
 }
@@ -50,15 +52,15 @@ func (r *reimbursementRepository) GetReimbursementByID(id uint) (*models.Reimbur
 	return &reimbursement, nil
 }
 
-func (r *reimbursementRepository) CreateReimbursement(reimbursement *models.Reimbursement) (*models.Reimbursement, error) {
-	if err := r.db.Create(reimbursement).Error; err != nil {
+func (r *reimbursementRepository) CreateReimbursement(ctx context.Context, reimbursement *models.Reimbursement) (*models.Reimbursement, error) {
+	if err := r.db.WithContext(ctx).Create(reimbursement).Error; err != nil {
 		return nil, err
 	}
 	return reimbursement, nil
 }
 
-func (r *reimbursementRepository) UpdateReimbursement(reimbursement *models.Reimbursement) (*models.Reimbursement, error) {
-	if err := r.db.Save(reimbursement).Error; err != nil {
+func (r *reimbursementRepository) UpdateReimbursement(ctx context.Context, reimbursement *models.Reimbursement) (*models.Reimbursement, error) {
+	if err := r.db.WithContext(ctx).Save(reimbursement).Error; err != nil {
 		return nil, err
 	}
 	return reimbursement, nil

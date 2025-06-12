@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"strconv"
@@ -89,7 +90,6 @@ func (h *OvertimeHandler) GetOvertimeList(ctx *gin.Context) {
 
 }
 
-
 // GetOvertimeByID godoc
 // @Summary      Get overtime by ID
 // @Description  Retrieves a specific overtime record by its ID. Admins can access any record, while users can only access their own.
@@ -118,7 +118,6 @@ func (h *OvertimeHandler) GetOvertimeByID(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{"data": overtime})
 }
-
 
 // CreateOvertime godoc
 // @Summary      Create overtime
@@ -151,6 +150,11 @@ func (h *OvertimeHandler) CreateOvertime(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user_id type"})
 		return
 	}
+
+	requestID := ctx.GetString("request_id")
+	ctx.Request = ctx.Request.WithContext(context.WithValue(ctx.Request.Context(), "user_id", currentUserIDUint))
+	ctx.Request = ctx.Request.WithContext(context.WithValue(ctx.Request.Context(), "request_id", requestID))
+
 	overtime := models.Overtime{
 		UserID: currentUserIDUint,
 		Date:   overtimeReq.Date,
@@ -158,7 +162,7 @@ func (h *OvertimeHandler) CreateOvertime(ctx *gin.Context) {
 		Note:   overtimeReq.Note,
 	}
 
-	createdOvertime, err := h.service.SubmitOvertime(&overtime)
+	createdOvertime, err := h.service.SubmitOvertime(ctx, &overtime)
 	if err != nil {
 		log.Println(err.Error())
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create overtime", "details": err.Error()})
@@ -167,7 +171,6 @@ func (h *OvertimeHandler) CreateOvertime(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusCreated, gin.H{"data": createdOvertime})
 }
-
 
 // UpdateOvertime godoc
 // @Summary      Update overtime
@@ -201,15 +204,31 @@ func (h *OvertimeHandler) UpdateOvertime(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user_id type"})
 		return
 	}
-	overtime := models.Overtime{
-		UserID: currentUserIDUint,
-		Date:   overtimeReq.Date,
-		Hours:  overtimeReq.Hours,
-		Note:   overtimeReq.Note,
+	
+	overtimeID, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
 	}
-	overtime.UserID = currentUserIDUint
+	
+	requestID := ctx.GetString("request_id")
+	ctx.Request = ctx.Request.WithContext(context.WithValue(ctx.Request.Context(), "user_id", currentUserIDUint))
+	ctx.Request = ctx.Request.WithContext(context.WithValue(ctx.Request.Context(), "request_id", requestID))
 
-	updatedOvertime, err := h.service.UpdateOvertime(&overtime)
+	overtime, err := h.service.GetOvertimeByID(uint(overtimeID))
+	if err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "Overtime not found"})
+		return
+	}
+	overtime.Date = overtimeReq.Date
+	overtime.Hours = overtimeReq.Hours
+	overtime.Note = overtimeReq.Note
+	if overtime.UserID != currentUserIDUint {
+		ctx.JSON(http.StatusForbidden, gin.H{"error": "You are not allowed to update this overtime"})
+		return
+	}
+
+	updatedOvertime, err := h.service.UpdateOvertime(ctx, overtime)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update overtime"})
 		return
@@ -217,7 +236,6 @@ func (h *OvertimeHandler) UpdateOvertime(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{"data": updatedOvertime})
 }
-
 
 // DeleteOvertime godoc
 // @Summary      Delete overtime

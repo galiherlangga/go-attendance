@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"time"
 
 	"github.com/galiherlangga/go-attendance/app/models"
@@ -12,8 +13,8 @@ type OvertimeRepository interface {
 	GetOvertimeList(userID uint, pagination utils.Pagination) ([]*models.Overtime, int64, error)
 	GetOvertimeByID(id uint) (*models.Overtime, error)
 	GetOvertimeByUserAndDate(userID uint, date time.Time) (*models.Overtime, error)
-	CreateOvertime(overtime *models.Overtime) (*models.Overtime, error)
-	UpdateOvertime(overtime *models.Overtime) (*models.Overtime, error)
+	CreateOvertime(ctx context.Context, overtime *models.Overtime) (*models.Overtime, error)
+	UpdateOvertime(ctx context.Context, overtime *models.Overtime) (*models.Overtime, error)
 	DeleteOvertime(id uint) error
 	CountOvertimeHours(userID uint, startDate, endDate string) (float64, error)
 }
@@ -68,15 +69,15 @@ func (r *overtimeRepository) GetOvertimeByUserAndDate(userID uint, date time.Tim
 	return &overtime, nil
 }
 
-func (r *overtimeRepository) CreateOvertime(overtime *models.Overtime) (*models.Overtime, error) {
-	if err := r.db.Create(overtime).Error; err != nil {
+func (r *overtimeRepository) CreateOvertime(ctx context.Context, overtime *models.Overtime) (*models.Overtime, error) {
+	if err := r.db.WithContext(ctx).Create(overtime).Error; err != nil {
 		return nil, err
 	}
 	return overtime, nil
 }
 
-func (r *overtimeRepository) UpdateOvertime(overtime *models.Overtime) (*models.Overtime, error) {
-	if err := r.db.Save(overtime).Error; err != nil {
+func (r *overtimeRepository) UpdateOvertime(ctx context.Context, overtime *models.Overtime) (*models.Overtime, error) {
+	if err := r.db.WithContext(ctx).Save(overtime).Error; err != nil {
 		return nil, err
 	}
 	return overtime, nil

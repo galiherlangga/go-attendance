@@ -1,6 +1,8 @@
 package repositories
 
 import (
+	"context"
+
 	"github.com/galiherlangga/go-attendance/app/models"
 	"gorm.io/gorm"
 )
@@ -9,8 +11,8 @@ type AttendanceRepository interface {
 	GetAttendanceList(userID uint, startDate, endDate string) ([]*models.Attendance, error)
 	GetAttendanceByID(id uint) (*models.Attendance, error)
 	GetAttendanceByUserAndDate(userID uint, date string) (*models.Attendance, error)
-	CreateAttendance(attendance *models.Attendance) (*models.Attendance, error)
-	UpdateAttendance(attendance *models.Attendance) (*models.Attendance, error)
+	CreateAttendance(ctx context.Context, attendance *models.Attendance) (*models.Attendance, error)
+	UpdateAttendance(ctx context.Context, attendance *models.Attendance) (*models.Attendance, error)
 	DeleteAttendance(id uint) error
 	CountWorkingDays(userID uint, startDate, endDate string) (int64, error)
 }
@@ -50,15 +52,15 @@ func (r *attendanceRepository) GetAttendanceByUserAndDate(userID uint, date stri
 	return &attendance, nil
 }
 
-func (r *attendanceRepository) CreateAttendance(attendance *models.Attendance) (*models.Attendance, error) {
-	if err := r.db.Create(attendance).Error; err != nil {
+func (r *attendanceRepository) CreateAttendance(ctx context.Context, attendance *models.Attendance) (*models.Attendance, error) {
+	if err := r.db.WithContext(ctx).Create(attendance).Error; err != nil {
 		return nil, err
 	}
 	return attendance, nil
 }
 
-func (r *attendanceRepository) UpdateAttendance(attendance *models.Attendance) (*models.Attendance, error) {
-	if err := r.db.Save(attendance).Error; err != nil {
+func (r *attendanceRepository) UpdateAttendance(ctx context.Context, attendance *models.Attendance) (*models.Attendance, error) {
+	if err := r.db.WithContext(ctx).Save(attendance).Error; err != nil {
 		return nil, err
 	}
 	return attendance, nil

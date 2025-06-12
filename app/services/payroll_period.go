@@ -10,16 +10,17 @@ import (
 	"github.com/galiherlangga/go-attendance/app/models"
 	"github.com/galiherlangga/go-attendance/app/repositories"
 	"github.com/galiherlangga/go-attendance/pkg/utils"
+	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 )
 
 type PayrollPeriodService interface {
 	GetPayrollPeriodList(pagination utils.Pagination) ([]*models.PayrollPeriod, int64, error)
 	GetPayrollPeriodByID(id uint) (*models.PayrollPeriod, error)
-	CreatePayrollPeriod(period *models.PayrollPeriod) (*models.PayrollPeriod, error)
-	UpdatePayrollPeriod(period *models.PayrollPeriod) (*models.PayrollPeriod, error)
+	CreatePayrollPeriod(ctx context.Context, period *models.PayrollPeriod) (*models.PayrollPeriod, error)
+	UpdatePayrollPeriod(ctx context.Context, period *models.PayrollPeriod) (*models.PayrollPeriod, error)
 	DeletePayrollPeriod(id uint) error
-	RunPayroll(periodID uint) error
+	RunPayroll(ctx context.Context, periodID uint) error
 }
 
 type payrollPeriodService struct {
@@ -81,12 +82,12 @@ func (s *payrollPeriodService) GetPayrollPeriodByID(id uint) (*models.PayrollPer
 	return period, nil
 }
 
-func (s *payrollPeriodService) CreatePayrollPeriod(period *models.PayrollPeriod) (*models.PayrollPeriod, error) {
+func (s *payrollPeriodService) CreatePayrollPeriod(ctx context.Context, period *models.PayrollPeriod) (*models.PayrollPeriod, error) {
 	if period == nil {
 		return nil, errors.New("payroll period cannot be nil")
 	}
 
-	createdPeriod, err := s.repo.Create(period)
+	createdPeriod, err := s.repo.Create(ctx, period)
 	if err != nil {
 		return nil, err
 	}
@@ -94,17 +95,16 @@ func (s *payrollPeriodService) CreatePayrollPeriod(period *models.PayrollPeriod)
 	return createdPeriod, nil
 }
 
-func (s *payrollPeriodService) UpdatePayrollPeriod(period *models.PayrollPeriod) (*models.PayrollPeriod, error) {
+func (s *payrollPeriodService) UpdatePayrollPeriod(ctx context.Context, period *models.PayrollPeriod) (*models.PayrollPeriod, error) {
 	if period == nil {
 		return nil, errors.New("payroll period cannot be nil")
 	}
 
-	updatedPeriod, err := s.repo.Update(period)
+	updatedPeriod, err := s.repo.Update(ctx, period)
 	if err != nil {
 		return nil, err
 	}
 	
-	ctx := context.Background()
 	cacheKey := utils.BuildKey("payroll", period.ID)
 	s.cache.Del(ctx, cacheKey) // Remove cache if exists
 
@@ -127,7 +127,7 @@ func (s *payrollPeriodService) DeletePayrollPeriod(id uint) error {
 	return nil
 }
 
-func (s *payrollPeriodService) RunPayroll(periodID uint) error {
+func (s *payrollPeriodService) RunPayroll(ctx context.Context, periodID uint) error {
 	period, err := s.repo.FindByID(periodID)
 	if err != nil {
 		return fmt.Errorf("failed to find payroll period: %w", err)
@@ -152,7 +152,9 @@ func (s *payrollPeriodService) RunPayroll(periodID uint) error {
 		}
 
 		for _, employee := range employees {
-			err := s.payslipService.GeneratePayslip(employee.ID, periodID, *employee.MonthlySalary)
+			request_id := uuid.New().String()
+			ctx = context.WithValue(ctx, "request_id", request_id)
+			err := s.payslipService.GeneratePayslip(ctx, employee.ID, periodID, *employee.MonthlySalary)
 			if err != nil {
 				return fmt.Errorf("failed to generate payslip for employee %d: %w", employee.ID, err)
 			}

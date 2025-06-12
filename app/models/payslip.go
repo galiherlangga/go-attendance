@@ -2,12 +2,10 @@ package models
 
 import (
 	"time"
-
-	"gorm.io/gorm"
 )
 
 type Payslip struct {
-	gorm.Model
+	BaseModel
 	UserID             uint      `json:"user_id" gorm:"not null,uniqueIndex:idx_user_period"`
 	PayrollPeriodID    uint      `json:"payroll_period_id" gorm:"not null,uniqueIndex:idx_user_period"`
 	GeneratedAt        time.Time `json:"generated_at" gorm:"default:null"`

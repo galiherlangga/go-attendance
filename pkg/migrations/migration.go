@@ -20,5 +20,6 @@ func AutoMigrate(db *gorm.DB) {
 	if err != nil {
 		log.Fatalf("Failed to run migrations: %v", err)
 	}
+	models.RegisterCallbacks(db)
 	log.Println("Migrations completed successfully")
 }
