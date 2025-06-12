@@ -3,6 +3,8 @@
 A payroll management system built with **Go (Gin Gonic)**, **PostgreSQL**, and **Redis**.  
 It supports employee attendance tracking, overtime, reimbursements, payslip generation, and admin reporting.
 
+---
+
 ## 🌟 Features
 
 - JWT-based authentication (Admin & Employee roles)
@@ -12,6 +14,17 @@ It supports employee attendance tracking, overtime, reimbursements, payslip gene
 - Admin summary reporting
 - Redis caching for performance
 - REST API using Gin Gonic
+- Interactive Swagger documentation
+
+---
+
+## 📚 Prerequisites
+
+Ensure you have the following installed:
+
+- [Go 1.24+](https://golang.org/dl/)
+- [Docker](https://www.docker.com/)
+- [Docker Compose](https://docs.docker.com/compose/)
 
 ---
 
@@ -20,6 +33,7 @@ It supports employee attendance tracking, overtime, reimbursements, payslip gene
 - **Backend:** Go + Gin
 - **Database:** PostgreSQL
 - **Cache:** Redis
+- **Docs:** Swagger via swaggo
 - **Containerized with:** Docker Compose
 
 ---
@@ -30,6 +44,7 @@ It supports employee attendance tracking, overtime, reimbursements, payslip gene
 .
 ├── app/
 ├── config/
+├── docs/
 ├── pkg/
 ├── routes/
 ├── tests/
@@ -72,24 +87,85 @@ JWT_SECRET=your_jwt_secret
 
 ## 🐳 Run with Docker Compose
 
-### Build and run with Docker Compose
+Build and run the application:
 
 ```bash
 docker-compose up --build
 ```
 
-- App will be available at: `http://localhost:8010`
-- PostgreSQL will run on port `5432`
-- Redis will run on port `6379`
+- App: `http://localhost:8010`
+- Swagger UI: `http://localhost:8010/swagger/index.html`
+- PostgreSQL: Port `5432`
+- Redis: Port `6379`
+
+---
+
+## 🧪 API Documentation (Swagger UI)
+
+Interactive API docs available at:
+
+```
+http://localhost:8010/swagger/index.html
+```
+
+If you change handler annotations or models, regenerate docs using:
+
+```bash
+swag init
+```
+
+---
+
+## 🔐 Authentication
+
+Uses JWT stored in HTTP-only cookies.
+
+### 🔑 Login
+
+```http
+POST /auth/login
+```
+
+Example Response:
+
+```json
+{
+  "access_token": "....",
+  "refresh_token": "...."
+}
+```
+
+The `access_token` will be stored in cookies and used for protected endpoints.
+
+If testing in Swagger UI, manually add a cookie:
+
+```
+Name: access_token
+Value: <your JWT token>
+```
+
+---
+
+## 🧰 Development Notes
+
+If you want to run locally without Docker:
+
+```bash
+go mod tidy
+go run main.go
+```
+
+Ensure PostgreSQL and Redis are running with correct `.env` config.
 
 ---
 
 ## ✅ Health Check
 
-Once the services are up:
+Verify if the API server is running:
 
-- Visit `http://localhost:8010/health` to test the API
-- Use tools like Postman or cURL to interact with other endpoints
+```bash
+http://localhost:8010/health
+```
 
 ---
 
@@ -97,7 +173,7 @@ Once the services are up:
 
 ### ❌ Server returned nothing
 
-Make sure Gin binds to `0.0.0.0` in `main.go`:
+Ensure Gin binds to `0.0.0.0` in `main.go`:
 
 ```go
 r.Run("0.0.0.0:" + port)
@@ -105,7 +181,7 @@ r.Run("0.0.0.0:" + port)
 
 ### ❌ Can't connect to DB or Redis?
 
-Ensure `.env` variables use container service names, like:
+Ensure your `.env` uses service names in Docker:
 
 ```env
 DB_HOST=db
