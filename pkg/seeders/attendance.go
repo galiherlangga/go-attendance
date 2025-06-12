@@ -18,9 +18,14 @@ func SeedAttendances(db *gorm.DB) {
 	for _, user := range users {
 		// Create attendance records for each user for the last 30 days
 		for i := 0; i < 30; i++ {
+			date := time.Now().AddDate(0, 0, -i)
+			// Skip weekends (Saturday and Sunday)
+			if date.Weekday() == time.Saturday || date.Weekday() == time.Sunday {
+				continue
+			}
 			attendance := models.Attendance{
 				UserID:    user.ID,
-				Date:      time.Now().AddDate(0, 0, -i),
+				Date:      date,
 				CheckIn:   &checkinTime,
 				CheckOut:  &checkoutTime,
 			}
