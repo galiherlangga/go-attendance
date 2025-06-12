@@ -129,7 +129,7 @@ func (h *AttendanceHandler) RetrieveAttendance(ctx *gin.Context) {
 func (h *AttendanceHandler) CheckIn(ctx *gin.Context) {
 	currentUserID, exists := ctx.Get("user_id")
 	if !exists {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "user_id not found in middleware"})
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized user access"})
 		return
 	}
 	currentUserIDUint, ok := currentUserID.(uint)
@@ -153,7 +153,6 @@ func (h *AttendanceHandler) CheckIn(ctx *gin.Context) {
 // @Tags         attendance
 // @Accept       json
 // @Produce      json
-// @Param        user_id  query     int  true  "User ID to check out"
 // @Success      200       {object}  map[string]interface{}  "Attendance record"
 // @Failure      400       {object}  map[string]string        "Invalid input"
 // @Failure      401       {object}  map[string]string        "Unauthorized"
@@ -162,13 +161,13 @@ func (h *AttendanceHandler) CheckIn(ctx *gin.Context) {
 // @Security     BearerAuth
 // @Router       /attendances/check-out [post]
 func (h *AttendanceHandler) CheckOut(ctx *gin.Context) {
-	userIDParam := ctx.DefaultQuery("user_id", "0")
-	if userIDParam == "0" {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "user_id is required"})
+	currentUserID, exists := ctx.Get("user_id")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized user access"})
 		return
 	}
-	userID, err := strconv.ParseUint(userIDParam, 10, 64)
-	if err != nil {
+	userID, ok := currentUserID.(uint)
+	if !ok {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid user_id"})
 		return
 	}

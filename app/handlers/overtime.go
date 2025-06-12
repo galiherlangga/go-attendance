@@ -175,6 +175,7 @@ func (h *OvertimeHandler) CreateOvertime(ctx *gin.Context) {
 // @Tags         overtime
 // @Accept       json
 // @Produce      json
+// @Param        id    path      int  true  "Overtime ID"
 // @Param        body  body      models.OvertimeRequest  true  "Overtime request payload"
 // @Success      200   {object}  models.OvertimeResponse  "Updated overtime record"
 // @Failure      400   {object}  map[string]string  "Invalid input"
@@ -182,7 +183,7 @@ func (h *OvertimeHandler) CreateOvertime(ctx *gin.Context) {
 // @Failure      500   {object}  map[string]string  "Internal server error"
 // @Security     CookieAuth
 // @Security     BearerAuth
-// @Router       /overtimes [put]
+// @Router       /overtimes/{id} [put]
 func (h *OvertimeHandler) UpdateOvertime(ctx *gin.Context) {
 	var overtimeReq models.OvertimeRequest
 	if err := ctx.ShouldBindJSON(&overtimeReq); err != nil {

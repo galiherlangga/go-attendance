@@ -20,9 +20,9 @@ type OvertimeCache struct {
 }
 
 type OvertimeRequest struct {
-	Date  time.Time `json:"date" binding:"required" format:"2006-01-02"`
-	Hours int       `json:"hours" binding:"required,min=1"`
-	Note  *string   `json:"note" binding:"omitempty,max=255"`
+	Date  time.Time `json:"date" binding:"required" format:"2006-01-02" example:"2025-06-11T00:00:00Z"`
+	Hours int       `json:"hours" binding:"required,min=1" example:"2"`
+	Note  *string   `json:"note" binding:"omitempty,max=255" example:"Worked extra hours for project deadline"`
 }
 
 // OvertimeResponse is used for Swagger documentation

@@ -169,6 +169,20 @@ func (h *PayrollPeriodHandler) DeletePayrollPeriod(ctx *gin.Context) {
 	ctx.JSON(http.StatusNoContent, nil)
 }
 
+
+// RunPayrollPeriod godoc
+// @Summary      Run payroll period
+// @Description  Runs the payroll calculations for a specific payroll period. Admin only.
+// @Tags         payroll
+// @Accept       json
+// @Produce      json
+// @Param        id     path      int  true  "Payroll Period ID"
+// @Success      200    {object}  map[string]string
+// @Failure      400    {object}  map[string]string
+// @Failure      500    {object}  map[string]string
+// @Security     CookieAuth
+// @Security     BearerAuth
+// @Router       /payroll-periods/{id}/run-payroll [post]
 func (h *PayrollPeriodHandler) RunPayrollPeriod(ctx *gin.Context) {
 	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
 	if err != nil {

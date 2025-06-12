@@ -20,9 +20,9 @@ type ReimbursementCache struct {
 }
 
 type ReimbursementRequest struct {
-	Date   time.Time `json:"date" binding:"required" format:"2006-01-02"`
-	Amount float64   `json:"amount" binding:"required,min=0"`
-	Note   *string   `json:"note" binding:"omitempty,max=255"`
+	Date   time.Time `json:"date" binding:"required" format:"2006-01-02" example:"2025-06-11T00:00:00Z"`
+	Amount float64   `json:"amount" binding:"required,min=0" example:"250000"`
+	Note   *string   `json:"note" binding:"omitempty,max=255" example:"Client lunch and parking"`
 }
 
 type ReimbursementResponse struct {
