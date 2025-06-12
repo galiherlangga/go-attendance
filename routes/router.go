@@ -11,7 +11,10 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	"gorm.io/gorm"
+	_ "github.com/galiherlangga/go-attendance/docs"
 )
 
 func SetupRouter(db *gorm.DB, cache *redis.Client) *gin.Engine {
@@ -25,7 +28,7 @@ func SetupRouter(db *gorm.DB, cache *redis.Client) *gin.Engine {
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
-	
+
 	// Init repositories
 	userRepo := repositories.NewUserRepository(db)
 	payslipRepo := repositories.NewPayslipRepository(db)
@@ -33,7 +36,7 @@ func SetupRouter(db *gorm.DB, cache *redis.Client) *gin.Engine {
 	attendanceRepo := repositories.NewAttendanceRepository(db)
 	overtimeRepo := repositories.NewOvertimeRepository(db)
 	reimbursementRepo := repositories.NewReimbursementRepository(db)
-	
+
 	// Init services
 	userService := services.NewUserService(userRepo)
 	payslipService := services.NewPayslipService(payslipRepo, attendanceRepo, overtimeRepo, reimbursementRepo, payrollPeriodRepo, userRepo)
@@ -41,7 +44,7 @@ func SetupRouter(db *gorm.DB, cache *redis.Client) *gin.Engine {
 	attendanceService := services.NewAttendanceService(attendanceRepo)
 	overtimeService := services.NewOvertimeService(overtimeRepo, cache)
 	reimbursementService := services.NewReimbursementService(reimbursementRepo, payrollPeriodRepo, cache)
-	
+
 	// Init handlers
 	userHandler := handlers.NewUserHandler(userService)
 	payslipHandler := handlers.NewPayslipHandler(payslipService, userService)
@@ -49,8 +52,7 @@ func SetupRouter(db *gorm.DB, cache *redis.Client) *gin.Engine {
 	attendanceHandler := handlers.NewAttendanceHandler(attendanceService, userService)
 	overtimeHandler := handlers.NewOvertimeHandler(overtimeService, userService)
 	reimbursementHandler := handlers.NewReimbursementHandler(reimbursementService, userService)
-	
-	
+
 	// Health check route
 	router.GET("/health", func(ctx *gin.Context) {
 		sqlDB, err := db.DB()
@@ -60,13 +62,13 @@ func SetupRouter(db *gorm.DB, cache *redis.Client) *gin.Engine {
 		}
 		ctx.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
-	
+
 	// Auth routes
 	authGroup := router.Group("/auth")
 	{
 		authGroup.POST("login", userHandler.Login)
 	}
-	
+
 	// Payroll period routes
 	payrollPeriodGroup := router.Group("/payroll-periods")
 	payrollPeriodGroup.Use(middleware.IsAdminMiddleware(userRepo))
@@ -78,7 +80,7 @@ func SetupRouter(db *gorm.DB, cache *redis.Client) *gin.Engine {
 		payrollPeriodGroup.DELETE("/:id", payrollPeriodHandler.DeletePayrollPeriod)
 		payrollPeriodGroup.POST("/:id/run-payroll", payrollPeriodHandler.RunPayrollPeriod)
 	}
-	
+
 	// Attendance routes
 	attendanceGroup := router.Group("/attendances")
 	attendanceGroup.Use(middleware.JWTAuthMiddleware())
@@ -88,7 +90,7 @@ func SetupRouter(db *gorm.DB, cache *redis.Client) *gin.Engine {
 		attendanceGroup.GET("", attendanceHandler.GetAttendanceList)
 		attendanceGroup.GET("/:id", attendanceHandler.RetrieveAttendance)
 	}
-	
+
 	// Overtime routes
 	overtimeGroup := router.Group("/overtimes")
 	overtimeGroup.Use(middleware.JWTAuthMiddleware())
@@ -99,7 +101,7 @@ func SetupRouter(db *gorm.DB, cache *redis.Client) *gin.Engine {
 		overtimeGroup.PUT("/:id", overtimeHandler.UpdateOvertime)
 		overtimeGroup.DELETE("/:id", overtimeHandler.DeleteOvertime)
 	}
-	
+
 	// Reimbursement routes
 	reimbursementGroup := router.Group("/reimbursements")
 	reimbursementGroup.Use(middleware.JWTAuthMiddleware())
@@ -110,7 +112,7 @@ func SetupRouter(db *gorm.DB, cache *redis.Client) *gin.Engine {
 		reimbursementGroup.PUT("/:id", reimbursementHandler.UpdateReimbursement)
 		reimbursementGroup.DELETE("/:id", reimbursementHandler.DeleteReimbursement)
 	}
-	
+
 	// Payslip routes
 	payslipGroup := router.Group("/payslips")
 	payslipGroup.Use(middleware.JWTAuthMiddleware())
@@ -122,6 +124,8 @@ func SetupRouter(db *gorm.DB, cache *redis.Client) *gin.Engine {
 	{
 		payslipAdminGroup.GET("/summary/:period_id", payslipHandler.GetPayslipSummary)
 	}
+
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	return router
 }

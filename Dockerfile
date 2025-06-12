@@ -1,27 +1,46 @@
-# Start from the official Golang image
-FROM golang:1.24-alpine
+# Build Stage
+FROM golang:1.24-alpine AS builder
 
-# Set environment variables
-ENV GO111MODULE=on \
-    CGO_ENABLED=0 \
-    GOOS=linux \
-    GOARCH=amd64
+# Install tools including tzdata and swag
+RUN apk --no-cache add git tzdata
 
-# Create working directory
 WORKDIR /app
 
-# Copy Go mod files
+# Copy go.mod and go.sum first for better caching
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy the rest of the app
+# Copy the source code
 COPY . .
 
-# Build the Go binary
-RUN go build -o main .
+# Optional: generate Swagger docs if using swaggo
+# Make sure swag is installed
+RUN go install github.com/swaggo/swag/cmd/swag@latest && \
+    swag init
 
-# Expose the app port
-EXPOSE 8080
+# Build the binary
+RUN go build -o payroll-app .
 
-# Run the app
-CMD ["./main"]
+# Final Stage
+FROM alpine:latest
+
+# Install CA certs and tzdata
+RUN apk --no-cache add ca-certificates tzdata
+
+# Set Timezone manually if needed
+# ENV TZ=Asia/Shanghai
+
+# Create app directory
+WORKDIR /app
+
+# Copy built binary from builder
+COPY --from=builder /app/payroll-app .
+
+# Expose application port
+EXPOSE 8010
+
+# Set environment variable (can be overridden in docker-compose)
+ENV ENV=production
+
+# Command to run the binary
+CMD ["./payroll-app"]

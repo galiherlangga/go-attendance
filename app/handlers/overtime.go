@@ -23,6 +23,22 @@ func NewOvertimeHandler(service services.OvertimeService, userService services.U
 	}
 }
 
+// GetOvertimeList godoc
+// @Summary      Get overtime list
+// @Description  Retrieves a list of overtime records for a specific user or all users if admin. Supports pagination.
+// @Tags         overtime
+// @Accept       json
+// @Produce      json
+// @Param        user_id   query     int  false  "User ID to filter overtime records"  default(0)
+// @Param        page      query     int  false  "Page number"  default(1)
+// @Param        limit     query     int  false  "Number of items per page"  default(10)
+// @Success      200       {object}  map[string]interface{}  "List of overtime records"
+// @Failure      400       {object}  map[string]string        "Invalid input"
+// @Failure      403       {object}  map[string]string        "Forbidden access"
+// @Failure      500       {object}  map[string]string        "Internal server error"
+// @Security     CookieAuth
+// @Security     BearerAuth
+// @Router       /overtimes [get]
 func (h *OvertimeHandler) GetOvertimeList(ctx *gin.Context) {
 	currentUserID, exists := ctx.Get("user_id")
 	if !exists {
@@ -73,6 +89,20 @@ func (h *OvertimeHandler) GetOvertimeList(ctx *gin.Context) {
 
 }
 
+
+// GetOvertimeByID godoc
+// @Summary      Get overtime by ID
+// @Description  Retrieves a specific overtime record by its ID. Admins can access any record, while users can only access their own.
+// @Tags         overtime
+// @Accept       json
+// @Produce      json
+// @Param        id     path      int  true  "Overtime ID"
+// @Success      200    {object}  map[string]interface{}  "Overtime record"
+// @Failure      400    {object}  map[string]string        "Invalid ID"
+// @Failure      404    {object}  map[string]string        "Overtime not found"
+// @Security     CookieAuth
+// @Security     BearerAuth
+// @Router       /overtimes/{id} [get]
 func (h *OvertimeHandler) GetOvertimeByID(ctx *gin.Context) {
 	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
 	if err != nil {
@@ -89,6 +119,21 @@ func (h *OvertimeHandler) GetOvertimeByID(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"data": overtime})
 }
 
+
+// CreateOvertime godoc
+// @Summary      Create overtime
+// @Description  Creates a new overtime record for the authenticated user.
+// @Tags         overtime
+// @Accept       json
+// @Produce      json
+// @Param        body  body      models.OvertimeRequest  true  "Overtime request payload"
+// @Success      201   {object}  models.OvertimeResponse  "Created overtime record"
+// @Failure      400   {object}  map[string]string  "Invalid input"
+// @Failure      401   {object}  map[string]string  "Unauthorized"
+// @Failure      500   {object}  map[string]string  "Internal server error"
+// @Security     CookieAuth
+// @Security     BearerAuth
+// @Router       /overtimes [post]
 func (h *OvertimeHandler) CreateOvertime(ctx *gin.Context) {
 	var overtimeReq models.OvertimeRequest
 	if err := ctx.ShouldBindJSON(&overtimeReq); err != nil {
@@ -123,6 +168,21 @@ func (h *OvertimeHandler) CreateOvertime(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, gin.H{"data": createdOvertime})
 }
 
+
+// UpdateOvertime godoc
+// @Summary      Update overtime
+// @Description  Updates an existing overtime record for the authenticated user.
+// @Tags         overtime
+// @Accept       json
+// @Produce      json
+// @Param        body  body      models.OvertimeRequest  true  "Overtime request payload"
+// @Success      200   {object}  models.OvertimeResponse  "Updated overtime record"
+// @Failure      400   {object}  map[string]string  "Invalid input"
+// @Failure      401   {object}  map[string]string  "Unauthorized"
+// @Failure      500   {object}  map[string]string  "Internal server error"
+// @Security     CookieAuth
+// @Security     BearerAuth
+// @Router       /overtimes [put]
 func (h *OvertimeHandler) UpdateOvertime(ctx *gin.Context) {
 	var overtimeReq models.OvertimeRequest
 	if err := ctx.ShouldBindJSON(&overtimeReq); err != nil {
@@ -157,6 +217,21 @@ func (h *OvertimeHandler) UpdateOvertime(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"data": updatedOvertime})
 }
 
+
+// DeleteOvertime godoc
+// @Summary      Delete overtime
+// @Description  Deletes an existing overtime record by its ID. Admins can delete any record, while users can only delete their own.
+// @Tags         overtime
+// @Accept       json
+// @Produce      json
+// @Param        id     path      int  true  "Overtime ID"
+// @Success      204    "No Content"
+// @Failure      400    {object}  map[string]string  "Invalid ID"
+// @Failure      403    {object}  map[string]string  "Forbidden access"
+// @Failure      404    {object}  map[string]string  "Overtime not found"
+// @Security     CookieAuth
+// @Security     BearerAuth
+// @Router       /overtimes/{id} [delete]
 func (h *OvertimeHandler) DeleteOvertime(ctx *gin.Context) {
 	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
 	if err != nil {

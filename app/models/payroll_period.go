@@ -18,3 +18,10 @@ type PayrollPeriodCache struct {
 	PayrollPeriod []*PayrollPeriod `json:"payroll_periods"`
 	Total         int64            `json:"total"`
 }
+
+// PayrollPeriodExample is used only for Swagger documentation.
+// @Description Sample payload for creating a payroll period
+type PayrollPeriodExample struct {
+	StartDate string `json:"start_date" example:"2023-01-01T00:00:00Z"`
+	EndDate   string `json:"end_date" example:"2023-01-15T00:00:00Z"`
+}

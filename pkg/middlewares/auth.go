@@ -10,16 +10,21 @@ import (
 
 func JWTAuthMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		cookie, err := ctx.Cookie("access_token")
+		token, err := ctx.Cookie("access_token")
 		if err != nil {
-			fmt.Println(err.Error())
-			ctx.JSON(401, gin.H{"error": "Unauthorized"})
-			ctx.Abort()
-			return
+			// If cookie not found, check Authorization header
+			authHeader := ctx.GetHeader("Authorization")
+			if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+				token = authHeader[7:]
+			} else {
+				ctx.JSON(401, gin.H{"error": "Unauthorized – token missing"})
+				ctx.Abort()
+				return
+			}
 		}
 
 		// Parse and validate the JWT token here
-		userID, err := utils.ParseJWT(cookie)
+		userID, err := utils.ParseJWT(token)
 		if err != nil {
 			fmt.Println(err.Error())
 			ctx.JSON(401, gin.H{"error": "Unauthorized"})
@@ -35,16 +40,21 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 
 func IsAdminMiddleware(userRepo repositories.UserRepository) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		cookie, err := ctx.Cookie("access_token")
+		token, err := ctx.Cookie("access_token")
 		if err != nil {
-			fmt.Println(err.Error())
-			ctx.JSON(401, gin.H{"error": "Unauthorized"})
-			ctx.Abort()
-			return
+			// If cookie not found, check Authorization header
+			authHeader := ctx.GetHeader("Authorization")
+			if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+				token = authHeader[7:]
+			} else {
+				ctx.JSON(401, gin.H{"error": "Unauthorized – token missing"})
+				ctx.Abort()
+				return
+			}
 		}
 
 		// Parse and validate the JWT token here
-		userID, err := utils.ParseJWT(cookie)
+		userID, err := utils.ParseJWT(token)
 		if err != nil {
 			fmt.Println(err.Error())
 			ctx.JSON(401, gin.H{"error": "Unauthorized"})

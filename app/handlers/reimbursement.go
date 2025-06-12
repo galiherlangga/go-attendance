@@ -22,6 +22,22 @@ func NewReimbursementHandler(service services.ReimbursementService, userService 
 	}
 }
 
+// GetReimbursementList godoc
+// @Summary      Get reimbursement list
+// @Description  Retrieves a list of reimbursement records for a specific user or all users if admin. Supports pagination.
+// @Tags         reimbursement
+// @Accept       json
+// @Produce      json
+// @Param        user_id   query     int  false  "User ID to filter reimbursement records"  default(0)
+// @Param        page      query     int  false  "Page number"  default(1)
+// @Param        limit     query     int  false  "Number of items per page"  default(10)
+// @Success      200       {object}  map[string]interface{}  "List of reimbursement records"
+// @Failure      400       {object}  map[string]string        "Invalid input"
+// @Failure      403       {object}  map[string]string        "Forbidden access"
+// @Failure      500       {object}  map[string]string        "Internal server error"
+// @Security     CookieAuth
+// @Security     BearerAuth
+// @Router       /reimbursements [get]
 func (h *ReimbursementHandler) GetReimbursementList(ctx *gin.Context) {
 	currentUserID, exists := ctx.Get("user_id")
 	if !exists {
@@ -72,6 +88,20 @@ func (h *ReimbursementHandler) GetReimbursementList(ctx *gin.Context) {
 	})
 }
 
+
+// GetReimbursementByID godoc
+// @Summary      Get reimbursement by ID
+// @Description  Retrieves a specific reimbursement record by its ID. Admins can access any record, while users can only access their own.
+// @Tags         reimbursement
+// @Accept       json
+// @Produce      json
+// @Param        id     path      int  true  "Reimbursement ID"
+// @Success      200    {object}  models.ReimbursementResponse  "Reimbursement record"
+// @Failure      400    {object}  map[string]string    "Invalid ID"
+// @Failure      404    {object}  map[string]string    "Reimbursement not found"
+// @Security     CookieAuth
+// @Security     BearerAuth
+// @Router       /reimbursements/{id} [get]
 func (h *ReimbursementHandler) GetReimbursementByID(ctx *gin.Context) {
 	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
 	if err != nil {
@@ -88,6 +118,20 @@ func (h *ReimbursementHandler) GetReimbursementByID(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, reimbursement)
 }
 
+
+// CreateReimbursement godoc
+// @Summary      Create reimbursement
+// @Description  Creates a new reimbursement record for the current user. The user must be authenticated.
+// @Tags         reimbursement
+// @Accept       json
+// @Produce      json
+// @Param        body   body      models.ReimbursementRequest  true  "Reimbursement payload"
+// @Success      201    {object}  models.ReimbursementResponse  "Created reimbursement record"
+// @Failure      400    {object}  map[string]string  "Invalid input"
+// @Failure      401    {object}  map[string]string  "Unauthorized"
+// @Security     CookieAuth
+// @Security     BearerAuth
+// @Router       /reimbursements [post]
 func (h *ReimbursementHandler) CreateReimbursement(ctx *gin.Context) {
 	var reimbursementReq models.ReimbursementRequest
 	if err := ctx.ShouldBindJSON(&reimbursementReq); err != nil {
@@ -121,6 +165,22 @@ func (h *ReimbursementHandler) CreateReimbursement(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, newReimbursement)
 }
 
+
+// UpdateReimbursement godoc
+// @Summary      Update reimbursement
+// @Description  Updates an existing reimbursement record by its ID. Only the user who created the reimbursement or an admin can update it.
+// @Tags         reimbursement
+// @Accept       json
+// @Produce      json
+// @Param        id     path      int  true  "Reimbursement ID"
+// @Param        body   body      models.ReimbursementRequest  true  "Reimbursement payload"
+// @Success      200    {object}  models.ReimbursementResponse  "Updated reimbursement record"
+// @Failure      400    {object}  map[string]string  "Invalid input"
+// @Failure      404    {object}  map[string]string  "Reimbursement not found"
+// @Failure      403    {object}  map[string]string  "Forbidden access"
+// @Security     CookieAuth
+// @Security     BearerAuth
+// @Router       /reimbursements/{id} [put]
 func (h *ReimbursementHandler) UpdateReimbursement(ctx *gin.Context) {
 	var reimbursementReq models.ReimbursementRequest
 	if err := ctx.ShouldBindJSON(&reimbursementReq); err != nil {
@@ -151,6 +211,21 @@ func (h *ReimbursementHandler) UpdateReimbursement(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, updatedReimbursement)
 }
 
+
+// DeleteReimbursement godoc
+// @Summary      Delete reimbursement
+// @Description  Deletes an existing reimbursement record by its ID. Only the user who created the reimbursement or an admin can delete it.
+// @Tags         reimbursement
+// @Accept       json
+// @Produce      json
+// @Param        id     path      int  true  "Reimbursement ID"
+// @Success      204    "No Content"
+// @Failure      400    {object}  map[string]string  "Invalid ID"
+// @Failure      403    {object}  map[string]string  "Forbidden access"
+// @Failure      404    {object}  map[string]string  "Reimbursement not found"
+// @Security     CookieAuth
+// @Security     BearerAuth
+// @Router       /reimbursements/{id} [delete]
 func (h *ReimbursementHandler) DeleteReimbursement(ctx *gin.Context) {
 	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
 	if err != nil {

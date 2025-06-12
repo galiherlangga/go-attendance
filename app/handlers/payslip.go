@@ -20,7 +20,22 @@ func NewPayslipHandler(service services.PayslipService, userService services.Use
 	}
 }
 
-// get payslip by user and period
+// GetPayslipList godoc
+// @Summary      Get payslip list
+// @Description  Retrieves a list of payslips for a specific user or all users if admin. Supports pagination.
+// @Tags         payslip
+// @Accept       json
+// @Produce      json
+// @Param        user_id   query     int  false  "User ID to filter payslip records"  default(0)
+// @Param        page      query     int  false  "Page number"  default(1)
+// @Param        limit     query     int  false  "Number of items per page"  default(10)
+// @Success      200       {object}  map[string]interface{}  "List of payslip records"
+// @Failure      400       {object}  map[string]string        "Invalid input"
+// @Failure      403       {object}  map[string]string        "Forbidden access"
+// @Failure      500       {object}  map[string]string        "Internal server error"
+// @Security     CookieAuth
+// @Security     BearerAuth
+// @Router       /payslips [get]
 func (h *PayslipHandler) GetPayslipByUserAndPeriod(ctx *gin.Context) {
 	currentUserID, exists := ctx.Get("user_id")
 	userIDParam := ctx.DefaultQuery("user_id", "0")
@@ -72,7 +87,19 @@ func (h *PayslipHandler) GetPayslipByUserAndPeriod(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, payslip)
 }
 
-// Get payslip summary for a specific period
+// GetPayslipSummary godoc
+// @Summary      Get payslip summary
+// @Description  Retrieves a summary of payslips for a specific payroll period.
+// @Tags         payslip
+// @Accept       json
+// @Produce      json
+// @Param        period_id  path      int  true  "Payroll Period ID"
+// @Success      200         {object}  map[string]interface{}  "Payslip summary"
+// @Failure      400         {object}  map[string]string        "Invalid input"
+// @Failure      500         {object}  map[string]string        "Internal server error"
+// @Security     CookieAuth
+// @Security     BearerAuth
+// @Router       /payslips/summary/{period_id} [get]
 func (h *PayslipHandler) GetPayslipSummary(ctx *gin.Context) {
 	periodIDParam := ctx.Param("period_id")
 	periodID, err := strconv.ParseUint(periodIDParam, 10, 64)

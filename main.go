@@ -10,6 +10,26 @@ import (
 	"github.com/galiherlangga/go-attendance/routes"
 )
 
+// @title           Go Attendance API
+// @version         1.0
+// @description     This is the backend API for a Go-based attendance and payroll system.
+
+// @contact.name   Galih Erlangga
+// @contact.email  galiherlanggadev@gmail.com
+
+// @license.name  MIT
+// @license.url   https://opensource.org/licenses/MIT
+
+// @host      localhost:8010
+// @BasePath  /
+
+// @securityDefinitions.apikey CookieAuth
+// @in cookie
+// @name access_token
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 func main() {
 	config.LoadEnv(".env")
 	appConfig := config.LoadAppConfig()

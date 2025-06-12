@@ -21,6 +21,19 @@ func NewPayrollPeriodHandler(service services.PayrollPeriodService) *PayrollPeri
 	}
 }
 
+// GetPayrollPeriodList godoc
+// @Summary      Get list of payroll periods
+// @Description  Retrieves a paginated list of payroll periods. Admin only.
+// @Tags         payroll
+// @Accept       json
+// @Produce      json
+// @Param        page   query     int  false  "Page number"  default(1)
+// @Param        limit  query     int  false  "Number of items per page"  default(10)
+// @Success      200    {object}  map[string]interface{}
+// @Failure      500    {object}  map[string]interface{}
+// @Security     CookieAuth
+// @Security     BearerAuth
+// @Router       /payroll-periods [get]
 func (h *PayrollPeriodHandler) GetPayrollPeriodList(ctx *gin.Context) {
 	pagination := utils.GetPagination(ctx)
 
@@ -38,6 +51,19 @@ func (h *PayrollPeriodHandler) GetPayrollPeriodList(ctx *gin.Context) {
 	})
 }
 
+// GetPayrollPeriodByID godoc
+// @Summary      Get payroll period by ID
+// @Description  Retrieves a specific payroll period by its ID. Admin only.
+// @Tags         payroll
+// @Accept       json
+// @Produce      json
+// @Param        id     path      int  true  "Payroll Period ID"
+// @Success      200    {object}  map[string]interface{}
+// @Failure      400    {object}  map[string]interface{}
+// @Failure      404    {object}  map[string]interface{}
+// @Security     CookieAuth
+// @Security     BearerAuth
+// @Router       /payroll-periods/{id} [get]
 func (h *PayrollPeriodHandler) GetPayrollPeriodByID(ctx *gin.Context) {
 	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
 	if err != nil {
@@ -54,6 +80,19 @@ func (h *PayrollPeriodHandler) GetPayrollPeriodByID(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"data": payrollPeriod})
 }
 
+// CreatePayrollPeriod godoc
+// @Summary      Create a payroll period
+// @Description  Creates a new payroll period. Admin only.
+// @Tags         payroll
+// @Accept       json
+// @Produce      json
+// @Param        body   body      models.PayrollPeriodExample  true  "Payroll Period payload"
+// @Success      201    {object}  map[string]interface{}
+// @Failure      400    {object}  map[string]interface{}
+// @Failure      500    {object}  map[string]interface{}
+// @Security     CookieAuth
+// @Security     BearerAuth
+// @Router       /payroll-periods [post]
 func (h *PayrollPeriodHandler) CreatePayrollPeriod(ctx *gin.Context) {
 	var period models.PayrollPeriod
 	if err := ctx.ShouldBindJSON(&period); err != nil {
@@ -70,6 +109,21 @@ func (h *PayrollPeriodHandler) CreatePayrollPeriod(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, gin.H{"data": createdPeriod})
 }
 
+
+// UpdatePayrollPeriod godoc
+// @Summary      Update a payroll period
+// @Description  Updates an existing payroll period. Admin only.
+// @Tags         payroll
+// @Accept       json
+// @Produce      json
+// @Param        id     path      int  true  "Payroll Period ID"
+// @Param        body   body      models.PayrollPeriod  true  "Payroll Period payload"
+// @Success      200    {object}  map[string]interface{}
+// @Failure      400    {object}  map[string]interface{}
+// @Failure      404    {object}  map[string]interface{}
+// @Security     CookieAuth
+// @Security     BearerAuth
+// @Router       /payroll-periods/{id} [put]
 func (h *PayrollPeriodHandler) UpdatePayrollPeriod(ctx *gin.Context) {
 	var period models.PayrollPeriod
 	if err := ctx.ShouldBindJSON(&period); err != nil {
@@ -86,6 +140,20 @@ func (h *PayrollPeriodHandler) UpdatePayrollPeriod(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"data": updatedPeriod})
 }
 
+
+// DeletePayrollPeriod godoc
+// @Summary      Delete a payroll period
+// @Description  Deletes a payroll period by its ID. Admin only.
+// @Tags         payroll
+// @Accept       json
+// @Produce      json
+// @Param        id     path      int  true  "Payroll Period ID"
+// @Success      204    "No Content"
+// @Failure      400    {object}  map[string]interface{}
+// @Failure      404    {object}  map[string]interface{}
+// @Security     CookieAuth
+// @Security     BearerAuth
+// @Router       /payroll-periods/{id} [delete]
 func (h *PayrollPeriodHandler) DeletePayrollPeriod(ctx *gin.Context) {
 	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
 	if err != nil {

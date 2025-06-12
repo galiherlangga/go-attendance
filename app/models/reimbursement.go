@@ -24,3 +24,14 @@ type ReimbursementRequest struct {
 	Amount float64   `json:"amount" binding:"required,min=0"`
 	Note   *string   `json:"note" binding:"omitempty,max=255"`
 }
+
+type ReimbursementResponse struct {
+	ID        uint       `json:"id" example:"1"`
+	CreatedAt time.Time  `json:"created_at" example:"2023-01-01T12:00:00Z"`
+	UpdatedAt time.Time  `json:"updated_at" example:"2023-01-02T12:00:00Z"`
+	DeletedAt *time.Time `json:"deleted_at,omitempty" example:"2023-01-10T00:00:00Z"`
+	UserID    uint       `json:"user_id" example:"101"`
+	Date      time.Time  `json:"date" example:"2023-06-01"`
+	Amount    float64    `json:"amount" example:"250000"`
+	Note      *string    `json:"note" example:"Client lunch and parking"`
+}
